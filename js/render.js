@@ -465,6 +465,8 @@
       cx.strokeText(tx.s, tx.x, tx.y); cx.fillStyle = tx.c; cx.fillText(tx.s, tx.x, tx.y);
       cx.globalAlpha = 1;
     }
+    // destello de pantalla en lazos grandes
+    for (const f of w.flashes) if (!f.echo && f.hits >= 4 && f.t < 0.12) { cx.setTransform(1, 0, 0, 1, 0, 0); cx.fillStyle = hexA('#ffffff', (0.12 - f.t) * (f.hits >= 6 ? 1.6 : 1)); cx.fillRect(0, 0, cv.width, cv.height); applyView(); }
     // ralentización
     if (w.slowT > 0) { cx.setTransform(1, 0, 0, 1, 0, 0); cx.fillStyle = hexA('#9a8aff', Math.min(0.12, w.slowT * 0.08)); cx.fillRect(0, 0, cv.width, cv.height); }
     // daño reciente

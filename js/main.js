@@ -119,7 +119,7 @@
       $('boss-fill').style.width = Math.max(0, (w.boss.hp / w.boss.maxHp) * 100) + '%';
     } else $('bossbar').classList.add('hidden');
   }
-  function showHud(on) { $('hud').classList.toggle('hidden', !on); $('touch-dash').classList.toggle('hidden', !on || !isTouch()); for (const k in hudC) delete hudC[k]; }
+  function showHud(on) { $('cv').style.cursor = on ? 'crosshair' : 'default'; $('hud').classList.toggle('hidden', !on); $('touch-dash').classList.toggle('hidden', !on || !isTouch()); for (const k in hudC) delete hudC[k]; }
 
   /* ---------------- tutorial ---------------- */
   let tutStep = 0;
