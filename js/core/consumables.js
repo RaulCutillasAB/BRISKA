@@ -45,7 +45,7 @@
   aug({ id: 'tasador', name: 'El Tasador', icon: 'scale', num: 'XVII',
     text: (g) => `Gana el valor de venta de tus Talismanes (máximo {$$50})${g ? ' (ahora {$$' + Math.min(50, g.talismans.reduce((s, t) => s + g.sellValue(t), 0)) + '})' : ''}`, sel: null,
     use: (g) => { const v = Math.min(50, g.talismans.reduce((s, t) => s + g.sellValue(t), 0)); g.money += v; return { money: v }; } });
-  aug({ id: 'rueda', name: 'La Rueda', icon: 'wheel', num: 'XVIII',
+  aug({ id: 'rueda', name: 'La Ruleta', icon: 'wheel', num: 'XVIII',
     text: () => '{p1 entre 4} de dar una edición ({kBrillante}, {kIridiscente} o {kAurora}) a un Talismán al azar', sel: null,
     can: (g) => g.talismans.some((t) => !t.ed),
     use: (g) => {
@@ -108,15 +108,15 @@
     text: () => 'Crea una copia de un Talismán al azar y {kdestruye} los demás', sel: null,
     can: (g) => g.talismans.length > 0,
     use: (g) => { const t = g.rng.pick(g.talismans); for (const o of g.talismans.slice()) if (o !== t) g.destroyTalisman(o); const c = g.newTalisman(t.id); c.ed = t.ed === 'eclipse' ? null : t.ed; c.st = JSON.parse(JSON.stringify(t.st)); g.addTalisman(c, true); return { talisman: c }; } });
-  for (const [sid, nm] of [['carmesi', 'Sello Carmesí'], ['zafiro', 'Sello Zafiro'], ['dorado', 'Sello Dorado'], ['violeta', 'Sello Violeta']]) {
+  for (const [sid, nm] of [['carmesi', 'Sello del Eco'], ['zafiro', 'Sello Estelar'], ['dorado', 'Sello del Mercader'], ['violeta', 'Sello del Augur']]) {
     ani({ id: 'sello_' + sid, name: nm, icon: 'seal', seal: sid,
       text: () => `Añade un {k${BR.SEALS[sid].name}} a 1 carta seleccionada`, sel: [1, 1],
       use: (g, cards) => { cards[0].seal = sid; return { changed: cards }; } });
   }
-  ani({ id: 'agujero', name: 'Agujero Negro', icon: 'blackhole', w: 0.4,
+  ani({ id: 'agujero', name: 'La Gran Conjunción', icon: 'blackhole', w: 0.4,
     text: () => 'Sube {k1 nivel} todas las manos', sel: null,
     use: (g) => { for (const h of BR.HAND_ORDER) g.levelUp(h, 1); return { levelUpAll: true }; } });
-  ani({ id: 'inmolacion', name: 'La Inmolación', icon: 'flame', 
+  ani({ id: 'inmolacion', name: 'La Quema', icon: 'flame', 
     text: () => '{kDestruye} 5 cartas al azar de tu mano y gana {$$20}', sel: null,
     can: (g) => g.hand.length > 0,
     use: (g) => { const cs = g.rng.shuffle(g.handCards().slice()).slice(0, 5); g.destroyCards(cs); g.money += 20; return { destroyed: cs, money: 20 }; } });
@@ -132,14 +132,14 @@
   ani({ id: 'clon', name: 'El Clon', icon: 'twin2',
     text: () => 'Crea {k2 copias} de 1 carta seleccionada en tu mano', sel: [1, 1],
     use: (g, cards) => { const added = []; for (let i = 0; i < 2; i++) { const c = g.makeCard(cards[0].suit, cards[0].rank); Object.assign(c, { enh: cards[0].enh, seal: cards[0].seal, ed: cards[0].ed, bonus: cards[0].bonus || 0 }); g.addCardToDeck(c, 'hand'); added.push(c); } return { added }; } });
-  ani({ id: 'aura', name: 'El Aura', icon: 'aurora',
+  ani({ id: 'aura', name: 'El Halo', icon: 'aurora',
     text: () => 'Da {kBrillante}, {kIridiscente} o {kAurora} a 1 carta seleccionada', sel: [1, 1],
     use: (g, cards) => { cards[0].ed = g.rng.weighted(['brillante', 'iridiscente', 'aurora'], (e) => ({ brillante: 50, iridiscente: 35, aurora: 15 }[e])); return { changed: cards }; } });
-  ani({ id: 'sigilo', name: 'El Sigilo', icon: 'rune',
+  ani({ id: 'sigilo', name: 'La Runa', icon: 'rune',
     text: () => 'Convierte todas las cartas de tu mano a un mismo {kpalo} aleatorio', sel: null,
     can: (g) => g.hand.length > 0,
     use: (g) => { const s = g.rng.pick(BR.SUITS); const cs = g.handCards(); for (const c of cs) c.suit = s; return { changed: cs }; } });
-  ani({ id: 'ouija', name: 'La Güija', icon: 'planchette',
+  ani({ id: 'ouija', name: 'La Tabla Parlante', icon: 'planchette',
     text: () => 'Convierte todas las cartas de tu mano a un mismo {kvalor} aleatorio. {k−1} carta en la mano', sel: null,
     can: (g) => g.hand.length > 0,
     use: (g) => { const r = g.rng.pick(BR.RANKS); const cs = g.handCards(); for (const c of cs) c.rank = r; g.base.handSize -= 1; return { changed: cs }; } });

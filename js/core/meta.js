@@ -115,7 +115,7 @@
     { id: 'biblio', name: 'Bibliófilo', icon: 'book', desc: 'Descubre 40 Talismanes', check: () => M.countDisc('tal') >= 40 },
     { id: 'prisa', name: 'Prisa nocturna', icon: 'feather', desc: 'Salta 3 envites en una partida', check: (e) => e.g && e.g.counts.skips >= 3 },
     { id: 'tahur', name: 'Tahúr', icon: 'twins', desc: 'Desbloquea todas las barajas', check: () => M.data.decks.length >= BR.DECKS.length },
-    { id: 'dorada', name: 'Llama eterna', icon: 'candle', desc: 'Gana una partida en Vela Dorada', check: (e) => e.type === 'win' && e.g.stake >= 5 },
+    { id: 'dorada', name: 'Llama eterna', icon: 'candle', desc: 'Gana una partida en Vela de Medianoche', check: (e) => e.type === 'win' && e.g.stake >= 5 },
     { id: 'diario', name: 'Fiel a la cita', icon: 'hourglass', desc: 'Llega a la Noche 3 en un Reto del día', check: (e) => e.g && e.g.daily && e.g.ante >= 3 },
   ];
   M.checkAch = function (ev) {

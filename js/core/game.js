@@ -444,7 +444,7 @@
         this.counts.bosses++;
         tev.push(...this.fire('bossBeaten'));
         const inv = this.tags.filter((t) => t === 'inversor').length;
-        if (inv) { lines.push({ label: 'Insignia del Inversor', value: 25 * inv, kind: 'tag' }); this.tags = this.tags.filter((t) => t !== 'inversor'); }
+        if (inv) { lines.push({ label: 'Insignia del Mecenas', value: 25 * inv, kind: 'tag' }); this.tags = this.tags.filter((t) => t !== 'inversor'); }
       }
       for (const e of tev) if (e.money) lines.push({ label: e.name, value: e.money, kind: 'tal', uid: e.uid });
       // el dinero de los talismanes se cobra junto al resto

@@ -92,7 +92,7 @@
     text: () => 'Las cartas del palo de {kTriunfo} dan {m+4} Mult extra al puntuar',
     card: (ctx, t, g, c) => (g.isTrump(c) ? { mult: 4 } : null) });
 
-  def({ id: 'estandarte', name: 'Estandarte', rarity: 1, cost: 5, icon: 'flag', hue: 355,
+  def({ id: 'estandarte', name: 'El Pendón', rarity: 1, cost: 5, icon: 'flag', hue: 355,
     text: (t, g) => `{c+30} Fichas por cada {kDescarte} que te quede`,
     hand: (ctx, t, g) => (g.r.discardsLeft > 0 ? { chips: 30 * g.r.discardsLeft } : null) });
 
@@ -123,7 +123,7 @@
     text: () => 'Gana {$$2} por cada Descarte sin usar si no descartaste en la ronda',
     roundEnd: (t, g) => (g.r.discardsUsed === 0 && g.r.discardsLeft > 0 ? { money: 2 * g.r.discardsLeft } : null) });
 
-  def({ id: 'toro', name: 'El Toro', rarity: 1, cost: 6, icon: 'bull', hue: 5,
+  def({ id: 'toro', name: 'La Embestida', rarity: 1, cost: 6, icon: 'bull', hue: 5,
     text: (t, g) => `{m+1} Mult por cada {$$3} que tengas${g ? ' (ahora {m+' + Math.max(0, Math.floor(g.money / 3)) + '})' : ''}`,
     hand: (ctx, t, g) => (g.money >= 3 ? { mult: Math.floor(g.money / 3) } : null) });
 
@@ -188,7 +188,7 @@
     text: () => 'Cada carta que puntúa gana {c+4} Fichas {kpermanentes}',
     card: (ctx, t, g, c) => { c.bonus = (c.bonus || 0) + 4; return { msg: '¡Mejora!', color: 'c' }; } });
 
-  def({ id: 'corredor', name: 'El Corredor', rarity: 2, cost: 6, icon: 'wing', hue: 195,
+  def({ id: 'corredor', name: 'El Galgo', rarity: 2, cost: 6, icon: 'wing', hue: 195,
     init: () => ({ v: 0 }),
     text: (t) => `Gana {c+15} Fichas cada vez que juegas una {kEscalera} (ahora {c+${t.st.v}})`,
     before: (ctx, t) => { if (ctx.contains.escalera) { t.st.v += 15; return { msg: '+15', color: 'c' }; } return null; },
@@ -206,7 +206,7 @@
     cardAdded: (t, g, n) => { t.st.v += 0.25 * n; return { msg: '×' + fx(t.st.v), color: 'x' }; },
     hand: (ctx, t) => (t.st.v > 1 ? { xmult: t.st.v } : null) });
 
-  def({ id: 'hoguera', name: 'La Hoguera', rarity: 2, cost: 7, icon: 'flame', hue: 10,
+  def({ id: 'hoguera', name: 'Las Ascuas', rarity: 2, cost: 7, icon: 'flame', hue: 10,
     init: () => ({ v: 1 }),
     text: (t) => `Gana {x×0,25} Mult por cada objeto vendido. Se reinicia al derrotar a un {kGuardián} (ahora {x×${fx(t.st.v)}})`,
     otherSold: (t) => { t.st.v += 0.25; return { msg: '×' + fx(t.st.v), color: 'x' }; },
@@ -216,10 +216,10 @@
   def({ id: 'manoagil', name: 'Mano Ágil', rarity: 2, cost: 7, icon: 'hand', hue: 320,
     text: () => 'Los {kColores} y las {kEscaleras} pueden formarse con {k4 cartas}', flags: { fourFingers: true } });
 
-  def({ id: 'atajo', name: 'El Atajo', rarity: 2, cost: 6, icon: 'arrow', hue: 160,
+  def({ id: 'atajo', name: 'La Trocha', rarity: 2, cost: 6, icon: 'arrow', hue: 160,
     text: () => 'Las {kEscaleras} pueden tener huecos de 1 valor (p. ej. 3·5·6·S·C)', flags: { shortcut: true } });
 
-  def({ id: 'pareidolia', name: 'Pareidolia', rarity: 2, cost: 6, icon: 'eye', hue: 300,
+  def({ id: 'pareidolia', name: 'Mil Caras', rarity: 2, cost: 6, icon: 'eye', hue: 300,
     text: () => 'Todas las cartas cuentan como {kfiguras}', flags: { allFaces: true } });
 
   def({ id: 'oleaje', name: 'El Oleaje', rarity: 2, cost: 4, icon: 'wave', hue: 200,
@@ -255,11 +255,11 @@
     text: () => 'Cada {kCaballo} que puntúa da {x×1,5} Mult',
     card: (ctx, t, g, c) => (c.enh !== 'piedra' && c.rank === 11 ? { xmult: 1.5 } : null) });
 
-  def({ id: 'duo', name: 'El Dúo', rarity: 2, cost: 7, icon: 'twin', hue: 330,
+  def({ id: 'duo', name: 'Los Novios', rarity: 2, cost: 7, icon: 'twin', hue: 330,
     text: () => '{x×2} Mult si la mano jugada contiene {kPareja}', hand: (ctx) => (ctx.contains.pareja ? { xmult: 2 } : null) });
   def({ id: 'bandada', name: 'La Bandada', rarity: 2, cost: 7, icon: 'bird', hue: 190,
     text: () => '{x×2} Mult si la mano jugada contiene {kColor}', hand: (ctx) => (ctx.contains.color ? { xmult: 2 } : null) });
-  def({ id: 'familia', name: 'La Familia', rarity: 2, cost: 7, icon: 'house', hue: 25,
+  def({ id: 'familia', name: 'Los Vecinos', rarity: 2, cost: 7, icon: 'house', hue: 25,
     text: () => '{x×2} Mult si la mano jugada contiene {kDoble Pareja}', hand: (ctx) => (ctx.contains.doble ? { xmult: 2 } : null) });
 
   def({ id: 'herreria', name: 'La Herrería', rarity: 2, cost: 7, icon: 'anvil', hue: 210,
@@ -267,7 +267,7 @@
     hand: (ctx, t, g) => { const n = g.deck.filter((c) => c.enh === 'hierro').length; return n ? { xmult: 1 + 0.2 * n } : null; } });
 
   def({ id: 'cantera', name: 'La Cantera', rarity: 2, cost: 6, icon: 'mountain', hue: 30,
-    text: (t, g) => `{c+25} Fichas por cada carta de {kPiedra} en tu baraja${g ? ' (ahora {c+' + 25 * g.deck.filter((c) => c.enh === 'piedra').length + '})' : ''}`,
+    text: (t, g) => `{c+25} Fichas por cada carta de {kGranito} en tu baraja${g ? ' (ahora {c+' + 25 * g.deck.filter((c) => c.enh === 'piedra').length + '})' : ''}`,
     hand: (ctx, t, g) => { const n = g.deck.filter((c) => c.enh === 'piedra').length; return n ? { chips: 25 * n } : null; } });
 
   def({ id: 'mercader', name: 'El Mercader', rarity: 2, cost: 5, icon: 'stall', hue: 35,
@@ -276,7 +276,7 @@
   def({ id: 'cazador', name: 'Cazarrecompensas', rarity: 2, cost: 6, icon: 'target', hue: 10,
     text: () => 'Gana {$$8} al derrotar a un {kGuardián}', bossBeaten: () => ({ money: 8 }) });
 
-  def({ id: 'malabarista', name: 'Malabarista', rarity: 2, cost: 6, icon: 'juggle', hue: 100,
+  def({ id: 'malabarista', name: 'Manos Largas', rarity: 2, cost: 6, icon: 'juggle', hue: 100,
     text: () => '{k+1} carta en la mano', passive: { handSize: 1 } });
   def({ id: 'basurero', name: 'El Trapero', rarity: 2, cost: 6, icon: 'sack', hue: 70,
     text: () => '{k+1} Descarte por ronda', passive: { discards: 1 } });
@@ -311,7 +311,7 @@
     text: () => 'Cada {kRey} que tengas en la mano da {x×1,5} Mult',
     held: (ctx, t, g, c) => (c.enh !== 'piedra' && c.rank === 12 ? { xmult: 1.5 } : null) });
 
-  def({ id: 'vampira', name: 'La Vampira', rarity: 3, cost: 7, icon: 'fang', hue: 345,
+  def({ id: 'vampira', name: 'La Sanguijuela', rarity: 3, cost: 7, icon: 'fang', hue: 345,
     init: () => ({ v: 1 }),
     text: (t) => `Gana {x×0,1} Mult por cada carta {kmejorada} que puntúa y le roba la mejora (ahora {x×${fx(t.st.v)}})`,
     before: (ctx, t) => { let n = 0; for (const c of ctx.scoring) if (c.enh && !c._debuffed) { c.enh = null; n++; } if (n) { t.st.v += 0.1 * n; return { msg: '×' + fx(t.st.v), color: 'x' }; } return null; },
@@ -354,7 +354,7 @@
     bossBeaten: (t) => { t.st.v += 1; return { msg: '×' + fx(t.st.v), color: 'x' }; },
     hand: (ctx, t) => (t.st.v > 1 ? { xmult: t.st.v } : null) });
   def({ id: 'titania', name: 'Titania', rarity: 4, cost: 20, icon: 'butterfly', hue: 160, legendary: true,
-    text: () => 'Las cartas de tu mano de {kOro} o {kHierro} dan {x×2} Mult',
+    text: () => 'Las cartas de tu mano de {kÁurea} o {kHierro} dan {x×2} Mult',
     held: (ctx, t, g, c) => (c.enh === 'oro' || c.enh === 'hierro' ? { xmult: 2 } : null) });
 
   BR.TALISMANS = T;

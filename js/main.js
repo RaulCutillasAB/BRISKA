@@ -3,7 +3,7 @@
   'use strict';
   const $ = (id) => document.getElementById(id);
   const V = BR.View, S = BR.Screens, FX = BR.FX, AU = BR.Audio, Meta = BR.Meta;
-  const UI = { g: null, sel: [], packSel: [], selTal: null, selCons: null, selShop: null, busy: false, drag: null, flip: new Set(), scoring: null, touch: false, cw: 96, ch: 134 };
+  const UI = { spawnFrom: {}, g: null, sel: [], packSel: [], selTal: null, selCons: null, selShop: null, busy: false, drag: null, flip: new Set(), scoring: null, touch: false, cw: 96, ch: 134 };
   BR.UI = UI;
   BR.speedMult = 1;
   Object.defineProperty(BR, 'uiBusy', { get: () => UI.busy });
@@ -70,7 +70,7 @@
       const pos = rowLayout(zr('z-tal'), order.length, cw, ch);
       order.forEach((uid, i) => {
         const t = g.talismans.find((x) => x.uid === uid); if (!t) return;
-        D.push({ key: uid, kind: 'tal', obj: t, x: pos[i].x, y: pos[i].y, z: 10 + i,
+        D.push({ key: uid, kind: 'tal', obj: t, x: pos[i].x, y: pos[i].y, z: 10 + i, from: UI.spawnFrom[uid],
           cls: (UI.selTal === uid ? 'sel' : '') + (t._disabled ? ' disabled-tal' : ''),
           drag: 'tal', onClick: () => clickTal(uid), tip: () => S.tipHTML('tal', t, g) });
       });
@@ -81,7 +81,7 @@
     {
       const pos = rowLayout(zr('z-cons'), g.consumables.length, cw, ch, { gap: cw * 0.08 });
       g.consumables.forEach((k, i) => {
-        D.push({ key: k.uid, kind: 'cons', obj: k, x: pos[i].x, y: pos[i].y, z: 10 + i, cls: UI.selCons === k.uid ? 'sel' : '',
+        D.push({ key: k.uid, kind: 'cons', obj: k, x: pos[i].x, y: pos[i].y, z: 10 + i, from: UI.spawnFrom[k.uid], cls: UI.selCons === k.uid ? 'sel' : '',
           onClick: () => clickCons(k.uid), tip: () => S.tipHTML('cons', k, g) });
       });
       $('cons-count').innerHTML = `<span class="${g.consumables.length >= g.consSlots() ? 'full' : ''}">${g.consumables.length}/${g.consSlots()}</span>`;
@@ -163,6 +163,7 @@
       });
     }
     V.sync(D);
+    UI.spawnFrom = {};
     const showHint = g.phase === 'round' && Meta.data.stats.hands < 2 && !UI.sel.length && !UI.busy && !g.played.length;
     const hint = $('hint');
     if (hint) { hint.classList.toggle('show', showHint); }
@@ -606,7 +607,7 @@
     UI.sel = [];
     AU.sfx.whoosh();
     showEvents(res.ev);
-    if (res.created.length) { AU.sfx.levelup(); S.toast('✦ El Lacre Violeta te concede un Augurio', 'unlock'); }
+    if (res.created.length) { AU.sfx.levelup(); S.toast('✦ El Lacre del Augur te concede un Augurio', 'unlock'); }
     const order = res.drawn.slice();
     UI.dealDelay = (id) => { const i = order.indexOf(id); return i >= 0 ? 150 + i * 70 : 0; };
     render();
@@ -709,15 +710,21 @@
     const g = UI.g;
     const it = where === 'items' ? g.shop.items[idx] : where === 'packs' ? g.shop.packs[idx] : g.shop.voucher;
     const before = g.money;
+    const sr0 = V.rect(key);
     const r = g.buy(where, idx, useNow);
     UI.selShop = null;
+    if (sr0) {
+      const fr = { x: sr0.left, y: sr0.top };
+      if (r.talisman) UI.spawnFrom[r.talisman.uid] = fr;
+      if (r.consumable) UI.spawnFrom[r.consumable.uid] = fr;
+    }
     if (r.err) { AU.sfx.error(); S.toast(r.err, 'err'); V.shakeIt(key); render(); return; }
     AU.sfx.buy();
     const p = V.center(key);
     if (p) FX.coins(p[0], p[1], 8);
     animateMoney(before, g.money);
     if (r.voucher) { AU.sfx.levelup(); banner(BR.VOUCHER_BY_ID[r.voucher].name, '', BR.VOUCHER_BY_ID[r.voucher].desc.replace(/\{[a-z$]([^}]*)\}/gi, '$1')); }
-    if (r.talisman) { V.exit(key, { mode: 'fade' }); }
+    if (r.talisman || r.consumable) { const s0 = V.sprites.get(key); if (s0) { s0.el.remove(); V.sprites.delete(key); } }
     if (r.pack) { AU.sfx.pack(); UI.packSel = []; if (p) FX.burst(p[0], p[1], { n: 40, colors: ['#fff6dc', '#ffd36e', '#c77dff'], speed: 8, life: 800, size: 4, shape: 'star' }); }
     render();
     if (r.used) { V.exit(key, { mode: 'dissolve' }); render(); UI.busy = true; await animateConsResult(r.used); UI.busy = false; render(); }
@@ -837,10 +844,12 @@
     const c = g.pack.choices.find((x) => x && x.key === key); if (!c) return;
     const p = V.center(key);
     UI.busy = true;
+    const pr0 = V.rect(key);
     const res = g.pickFromPack(key, UI.packSel.slice());
+    if (res.talisman && pr0 && c.kind === 'tal') { UI.spawnFrom[res.talisman.uid] = { x: pr0.left, y: pr0.top }; const s0 = V.sprites.get(key); if (s0) { s0.el.remove(); V.sprites.delete(key); } }
     if (res.err) { UI.busy = false; AU.sfx.error(); S.toast(res.err, 'err'); V.shakeIt(key); return; }
     UI.selShop = null;
-    if (c.kind === 'tal' || c.kind === 'card') { AU.sfx.buy(); V.exit(key, { mode: 'fade' }); }
+    if (c.kind === 'tal' || c.kind === 'card') { AU.sfx.buy(); }
     else { V.exit(key, { mode: 'dissolve' }); if (p) FX.burst(p[0], p[1], { n: 30, colors: ['#e6c8ff', '#9fd8ff', '#fff'], speed: 6, life: 800, size: 4, shape: 'star' }); }
     if (c.kind === 'card') { const dp = deckPos(); V.exit(key, { mode: 'fly', x: dp.x, y: dp.y, down: false, scale: 0.6 }); }
     UI.packSel = [];
@@ -1094,6 +1103,7 @@
     computeSize();
     bind();
     showMenu();
+    if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol) && !window.__BRISKA_SINGLE__) navigator.serviceWorker.register('sw.js').catch(() => {});
     // las fuentes cambian medidas
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { computeSize(); render(); });
   }

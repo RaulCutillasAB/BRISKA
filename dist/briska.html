@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="es">
 <head>
+<script>window.__BRISKA_SINGLE__ = true;</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#0d0a1a">
@@ -598,6 +599,8 @@ input[type=range] { width: 160px; accent-color: var(--gold); }
 }
 
 </style>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='8' y='4' width='48' height='56' rx='8' fill='%233b1d5c' stroke='%23f2c96b' stroke-width='4'/%3E%3Cpath d='M32 14l5 13 13 5-13 5-5 13-5-13-13-5 13-5z' fill='%23f2c96b'/%3E%3C/svg%3E">
 </head>
 <body>
@@ -844,17 +847,17 @@ input[type=range] { width: 160px; accent-color: var(--gold); }
     ambar:   { name: 'Ámbar',   desc: '{c+30} Fichas' },
     rubi:    { name: 'Rubí',    desc: '{m+4} Mult' },
     cristal: { name: 'Cristal', desc: '{x×2} Mult. {p1 entre 4} de romperse' },
-    piedra:  { name: 'Piedra',  desc: '{c+50} Fichas. Sin valor ni palo; siempre puntúa' },
-    oro:     { name: 'Oro',     desc: '{$+$3} si está en tu mano al terminar la ronda' },
+    piedra:  { name: 'Granito',  desc: '{c+50} Fichas. Sin valor ni palo; siempre puntúa' },
+    oro:     { name: 'Áurea',     desc: '{$+$3} si está en tu mano al terminar la ronda' },
     hierro:  { name: 'Hierro',  desc: '{x×1,5} Mult mientras esté en tu mano' },
     prisma:  { name: 'Prisma',  desc: 'Cuenta como cualquier palo' },
     fortuna: { name: 'Fortuna', desc: '{p1 entre 5} de {m+20} Mult. {p1 entre 15} de ganar {$$20}' },
   };
   BR.SEALS = {
-    carmesi: { name: 'Lacre Carmesí', color: '#e0344e', desc: 'Se activa {k1 vez más}' },
-    zafiro:  { name: 'Lacre Zafiro',  color: '#3a7ee8', desc: 'Si está en tu mano al terminar la ronda, crea la {kConstelación} de la última mano jugada' },
-    dorado:  { name: 'Lacre Dorado',  color: '#e8b52f', desc: 'Gana {$$3} al puntuar' },
-    violeta: { name: 'Lacre Violeta', color: '#9a52e0', desc: 'Crea un {kAugurio} al descartarla' },
+    carmesi: { name: 'Lacre del Eco', color: '#e0344e', desc: 'Se activa {k1 vez más}' },
+    zafiro:  { name: 'Lacre Estelar',  color: '#3a7ee8', desc: 'Si está en tu mano al terminar la ronda, crea la {kConstelación} de la última mano jugada' },
+    dorado:  { name: 'Lacre del Mercader',  color: '#e8b52f', desc: 'Gana {$$3} al puntuar' },
+    violeta: { name: 'Lacre del Augur', color: '#9a52e0', desc: 'Crea un {kAugurio} al descartarla' },
   };
   BR.EDITIONS = {
     brillante:   { name: 'Brillante',   desc: '{c+50} Fichas', cost: 2 },
@@ -888,22 +891,22 @@ input[type=range] { width: 160px; accent-color: var(--gold); }
       apply: (g) => { g.flags.trumpMult = 3; g.flags.canteMult = 2; } },
     { id: 'bicolor', name: 'Baraja Bicolor', color: '#c05f3a', color2: '#7fb2e8', desc: 'Solo {sOros} y {sEspadas}: 20 de cada', unlock: { type: 'wins', v: 1, text: 'Gana una partida' },
       build: () => { const c = []; for (const s of ['oros', 'espadas']) for (const r of BR.RANKS) { c.push({ suit: s, rank: r }, { suit: s, rank: r }); } return c; } },
-    { id: 'desnuda', name: 'Baraja Desnuda', color: '#8a7a68', color2: '#e6d6b8', desc: 'Sin {kfiguras}: solo 28 naipes del As al Siete', unlock: { type: 'stake', v: 2, text: 'Gana en Vela Roja' },
+    { id: 'desnuda', name: 'Baraja Desnuda', color: '#8a7a68', color2: '#e6d6b8', desc: 'Sin {kfiguras}: solo 28 naipes del As al Siete', unlock: { type: 'stake', v: 2, text: 'Gana en Vela de Cera' },
       build: () => { const c = []; for (const s of BR.SUITS) for (const r of [1, 2, 3, 4, 5, 6, 7]) c.push({ suit: s, rank: r }); return c; } },
-    { id: 'equilibrio', name: 'Baraja del Equilibrio', color: '#7a4fb8', color2: '#f0a8e8', desc: 'Fichas y Mult se {kequilibran} antes de multiplicar. Objetivos {x×2}', unlock: { type: 'stake', v: 3, text: 'Gana en Vela Verde' },
+    { id: 'equilibrio', name: 'Baraja del Equilibrio', color: '#7a4fb8', color2: '#f0a8e8', desc: 'Fichas y Mult se {kequilibran} antes de multiplicar. Objetivos {x×2}', unlock: { type: 'stake', v: 3, text: 'Gana en Vela de Incienso' },
       apply: (g) => { g.flags.balance = true; g.flags.targetMult = 2; } },
-    { id: 'errante', name: 'Baraja Errante', color: '#2a8a8a', color2: '#ffd36e', desc: 'Todos los valores y palos son {kaleatorios}', unlock: { type: 'wins', v: 3, text: 'Gana 3 partidas' },
+    { id: 'errante', name: 'Baraja del Torbellino', color: '#2a8a8a', color2: '#ffd36e', desc: 'Todos los valores y palos son {kaleatorios}', unlock: { type: 'wins', v: 3, text: 'Gana 3 partidas' },
       build: (rng) => { const c = []; for (let i = 0; i < 40; i++) c.push({ suit: rng.pick(BR.SUITS), rank: rng.pick(BR.RANKS) }); return c; } },
   ];
 
   /* ---------- Dificultades: Velas ---------- */
   BR.STAKES = [
-    { name: 'Vela Blanca',  color: '#f2ecdf', desc: 'Dificultad base' },
-    { name: 'Vela Roja',    color: '#e04a4a', desc: 'El Envite Menor no da recompensa' },
-    { name: 'Vela Verde',   color: '#45b36b', desc: 'Los objetivos crecen más deprisa' },
-    { name: 'Vela Negra',   color: '#2a2433', desc: '{k−1} Descarte por ronda' },
-    { name: 'Vela Azul',    color: '#3d7fd0', desc: 'Todo en la tienda cuesta {$+$1}' },
-    { name: 'Vela Dorada',  color: '#e8b52f', desc: '{k−1} Mano por ronda. El desafío definitivo' },
+    { name: 'Vela de Sebo',  color: '#f2ecdf', desc: 'Dificultad base' },
+    { name: 'Vela de Cera',  color: '#f0b850', desc: 'El Envite Menor no da recompensa' },
+    { name: 'Vela de Incienso', color: '#b07ad0', desc: 'Los objetivos crecen más deprisa' },
+    { name: 'Vela de Azufre', color: '#d8d040', desc: '{k−1} Descarte por ronda' },
+    { name: 'Vela de Ceniza', color: '#8a8a9a', desc: 'Todo en la tienda cuesta {$+$1}' },
+    { name: 'Vela de Medianoche', color: '#4a4ad0', desc: '{k−1} Mano por ronda. El desafío definitivo' },
   ];
 
   BR.ANTE_TARGETS = [300, 800, 1900, 4200, 8500, 16000, 28000, 46000];
@@ -962,17 +965,17 @@ input[type=range] { width: 160px; accent-color: var(--gold); }
 
   /* ---------- Insignias (por saltar envites) ---------- */
   BR.TAGS = [
-    { id: 'cupon', name: 'Insignia del Cupón', icon: 'tag', desc: 'Los artículos iniciales de la próxima Feria son {kgratis}' },
-    { id: 'rara', name: 'Insignia Rara', icon: 'gem', desc: 'La próxima Feria tiene un Talismán {kRaro} gratis' },
+    { id: 'cupon', name: 'Insignia del Regalo', icon: 'tag', desc: 'Los artículos iniciales de la próxima Feria son {kgratis}' },
+    { id: 'rara', name: 'Insignia Esmeralda', icon: 'gem', desc: 'La próxima Feria tiene un Talismán {kRaro} gratis' },
     { id: 'iris', name: 'Insignia Iridiscente', icon: 'prism', desc: 'El próximo Talismán de la Feria es {kIridiscente} y gratis' },
     { id: 'aurora', name: 'Insignia Aurora', icon: 'aurora', desc: 'El próximo Talismán de la Feria es {kAurora} y gratis', min: 2 },
-    { id: 'inversor', name: 'Insignia del Inversor', icon: 'coin', desc: 'Gana {$$25} al derrotar al Guardián de esta Noche' },
-    { id: 'doble', name: 'Insignia Doble', icon: 'twin', desc: 'Copia la próxima Insignia que consigas' },
+    { id: 'inversor', name: 'Insignia del Mecenas', icon: 'coin', desc: 'Gana {$$25} al derrotar al Guardián de esta Noche' },
+    { id: 'doble', name: 'Insignia Gemela', icon: 'twin', desc: 'Copia la próxima Insignia que consigas' },
     { id: 'celeste', name: 'Insignia Celeste', icon: 'star', desc: 'Abre gratis un {kMega Sobre Celeste}' },
     { id: 'arcana', name: 'Insignia Arcana', icon: 'eye', desc: 'Abre gratis un {kMega Sobre de Augurios}' },
     { id: 'espectral', name: 'Insignia Espectral', icon: 'spiral', desc: 'Abre gratis un {kSobre de Ánimas}', min: 2 },
-    { id: 'bufon', name: 'Insignia del Bufón', icon: 'mask', desc: 'Abre gratis un {kMega Sobre de Talismanes}' },
-    { id: 'prisa', name: 'Insignia de la Prisa', icon: 'feather', desc: 'Gana {$$5} por cada Envite saltado en la partida' },
+    { id: 'bufon', name: 'Insignia del Juglar', icon: 'mask', desc: 'Abre gratis un {kMega Sobre de Talismanes}' },
+    { id: 'prisa', name: 'Insignia del Viajero', icon: 'feather', desc: 'Gana {$$5} por cada Envite saltado en la partida' },
     { id: 'economia', name: 'Insignia de la Usura', icon: 'chest', desc: 'Duplica tu dinero (máximo {$+$40})' },
     { id: 'destino', name: 'Insignia del Destino', icon: 'dice', desc: 'Renovar la próxima Feria empieza costando {$$0}' },
     { id: 'guardian', name: 'Insignia del Guardián', icon: 'mask2', desc: 'Cambia al {kGuardián} de esta Noche' },
@@ -984,12 +987,12 @@ input[type=range] { width: 160px; accent-color: var(--gold); }
     { id: 'sed', name: 'La Sed', icon: 'cup', color: '#c03a50', desc: 'Las cartas de {sCopas} están debilitadas', min: 1, debuff: (c) => c.suit === 'copas' },
     { id: 'oxido', name: 'El Óxido', icon: 'sword', color: '#3a6cb0', desc: 'Las cartas de {sEspadas} están debilitadas', min: 1, debuff: (c) => c.suit === 'espadas' },
     { id: 'carcoma', name: 'La Carcoma', icon: 'staff', color: '#3a8a52', desc: 'Las cartas de {sBastos} están debilitadas', min: 1, debuff: (c) => c.suit === 'bastos' },
-    { id: 'muralla', name: 'La Muralla', icon: 'wall', color: '#7a6a5a', desc: 'Objetivo enorme', min: 2, targetMult: 4 },
-    { id: 'aguja', name: 'La Aguja', icon: 'needle', color: '#5a8a8a', desc: 'Solo dispones de {k1 Mano}', min: 2, targetMult: 1, start: (g) => { g.r.handsLeft = 1; } },
-    { id: 'ojo', name: 'El Ojo', icon: 'eye', color: '#3f6fd0', desc: 'No puedes repetir el mismo tipo de mano', min: 3,
-      check: (g, ev) => g.r.typesPlayed.includes(ev.type) ? 'El Ojo ya ha visto esa mano' : null },
-    { id: 'boca', name: 'La Boca', icon: 'mouth', color: '#c0508a', desc: 'Solo puedes jugar un tipo de mano en esta ronda', min: 2,
-      check: (g, ev) => (g.r.typesPlayed.length && g.r.typesPlayed[0] !== ev.type) ? 'La Boca solo acepta ' + BR.HANDS[g.r.typesPlayed[0]].name : null },
+    { id: 'muralla', name: 'El Bastión', icon: 'wall', color: '#7a6a5a', desc: 'Objetivo enorme', min: 2, targetMult: 4 },
+    { id: 'aguja', name: 'El Hilo', icon: 'needle', color: '#5a8a8a', desc: 'Solo dispones de {k1 Mano}', min: 2, targetMult: 1, start: (g) => { g.r.handsLeft = 1; } },
+    { id: 'ojo', name: 'El Vigía', icon: 'eye', color: '#3f6fd0', desc: 'No puedes repetir el mismo tipo de mano', min: 3,
+      check: (g, ev) => g.r.typesPlayed.includes(ev.type) ? 'El Vigía ya ha visto esa mano' : null },
+    { id: 'boca', name: 'La Costumbre', icon: 'mouth', color: '#c0508a', desc: 'Solo puedes jugar un tipo de mano en esta ronda', min: 2,
+      check: (g, ev) => (g.r.typesPlayed.length && g.r.typesPlayed[0] !== ev.type) ? 'La Costumbre solo acepta ' + BR.HANDS[g.r.typesPlayed[0]].name : null },
     { id: 'mascara', name: 'La Máscara', icon: 'mask2', color: '#6a4a8a', desc: 'Las {kfiguras} se roban boca abajo', min: 2, faceDown: (c, g) => g.isFace(c) },
     { id: 'polilla', name: 'La Polilla', icon: 'moth', color: '#8a7a5a', desc: '{p1 de cada 6} cartas se roba boca abajo', min: 2, faceDown: (c, g) => g.rng.chance(1 / 6) },
     { id: 'marea', name: 'La Marea', icon: 'wave', color: '#2a7a9a', desc: 'Tras cada mano jugada, descarta 2 cartas al azar de tu mano', min: 1,
@@ -1005,10 +1008,10 @@ input[type=range] { width: 160px; accent-color: var(--gold); }
     { id: 'usurpador', name: 'El Usurpador', icon: 'crown', color: '#8a2a4a', desc: 'Las cartas del palo de {kTriunfo} están debilitadas', min: 3, debuff: (c, g) => g.r && c.suit === g.r.trump },
     { id: 'olvido', name: 'El Olvido', icon: 'hourglass', color: '#5a6a8a', desc: 'Juegas todas las manos como si fueran de nivel 1', min: 3, levelOne: true },
     { id: 'espina', name: 'La Espina', icon: 'thorn', color: '#4a6a3a', desc: 'Las cartas ya jugadas en esta Noche están debilitadas', min: 2, debuff: (c, g) => g.anteplayed.includes(c.id) },
-    { id: 'brazo', name: 'El Brazo', icon: 'arm', color: '#6a4a3a', desc: 'Baja 1 nivel la mano que juegues', min: 2,
+    { id: 'brazo', name: 'El Desgaste', icon: 'arm', color: '#6a4a3a', desc: 'Baja 1 nivel la mano que juegues', min: 2,
       before: (g, ev) => { const h = g.handLevels[ev.type]; if (h.lvl > 1) { h.lvl--; return true; } return false; } },
     // Guardianes finales
-    { id: 'eclipse', name: 'Eclipse Carmesí', icon: 'eclipse', color: '#c0203a', final: true, desc: 'Desactiva un Talismán al azar en cada mano', start: (g) => g.pickEclipse(), after: (g) => g.pickEclipse() },
+    { id: 'eclipse', name: 'La Luna de Sangre', icon: 'eclipse', color: '#c0203a', final: true, desc: 'Desactiva un Talismán al azar en cada mano', start: (g) => g.pickEclipse(), after: (g) => g.pickEclipse() },
     { id: 'reina', name: 'La Reina sin Rostro', icon: 'mask', color: '#d0d0e8', final: true, desc: 'Todos los {kAses} y {kfiguras} están debilitados', debuff: (c, g) => c.rank === 1 || g.isFace(c, true) },
     { id: 'leviatan', name: 'Leviatán', icon: 'wave', color: '#1a6a7a', final: true, desc: '{k−2} cartas en la mano', handSize: -2 },
     { id: 'tejedor', name: 'El Tejedor', icon: 'spiral', color: '#7a5ab0', final: true, desc: 'Juegas todas las manos como si fueran de nivel 1', levelOne: true },
@@ -1230,7 +1233,7 @@ input[type=range] { width: 160px; accent-color: var(--gold); }
     text: () => 'Las cartas del palo de {kTriunfo} dan {m+4} Mult extra al puntuar',
     card: (ctx, t, g, c) => (g.isTrump(c) ? { mult: 4 } : null) });
 
-  def({ id: 'estandarte', name: 'Estandarte', rarity: 1, cost: 5, icon: 'flag', hue: 355,
+  def({ id: 'estandarte', name: 'El Pendón', rarity: 1, cost: 5, icon: 'flag', hue: 355,
     text: (t, g) => `{c+30} Fichas por cada {kDescarte} que te quede`,
     hand: (ctx, t, g) => (g.r.discardsLeft > 0 ? { chips: 30 * g.r.discardsLeft } : null) });
 
@@ -1261,7 +1264,7 @@ input[type=range] { width: 160px; accent-color: var(--gold); }
     text: () => 'Gana {$$2} por cada Descarte sin usar si no descartaste en la ronda',
     roundEnd: (t, g) => (g.r.discardsUsed === 0 && g.r.discardsLeft > 0 ? { money: 2 * g.r.discardsLeft } : null) });
 
-  def({ id: 'toro', name: 'El Toro', rarity: 1, cost: 6, icon: 'bull', hue: 5,
+  def({ id: 'toro', name: 'La Embestida', rarity: 1, cost: 6, icon: 'bull', hue: 5,
     text: (t, g) => `{m+1} Mult por cada {$$3} que tengas${g ? ' (ahora {m+' + Math.max(0, Math.floor(g.money / 3)) + '})' : ''}`,
     hand: (ctx, t, g) => (g.money >= 3 ? { mult: Math.floor(g.money / 3) } : null) });
 
@@ -1326,7 +1329,7 @@ input[type=range] { width: 160px; accent-color: var(--gold); }
     text: () => 'Cada carta que puntúa gana {c+4} Fichas {kpermanentes}',
     card: (ctx, t, g, c) => { c.bonus = (c.bonus || 0) + 4; return { msg: '¡Mejora!', color: 'c' }; } });
 
-  def({ id: 'corredor', name: 'El Corredor', rarity: 2, cost: 6, icon: 'wing', hue: 195,
+  def({ id: 'corredor', name: 'El Galgo', rarity: 2, cost: 6, icon: 'wing', hue: 195,
     init: () => ({ v: 0 }),
     text: (t) => `Gana {c+15} Fichas cada vez que juegas una {kEscalera} (ahora {c+${t.st.v}})`,
     before: (ctx, t) => { if (ctx.contains.escalera) { t.st.v += 15; return { msg: '+15', color: 'c' }; } return null; },
@@ -1344,7 +1347,7 @@ input[type=range] { width: 160px; accent-color: var(--gold); }
     cardAdded: (t, g, n) => { t.st.v += 0.25 * n; return { msg: '×' + fx(t.st.v), color: 'x' }; },
     hand: (ctx, t) => (t.st.v > 1 ? { xmult: t.st.v } : null) });
 
-  def({ id: 'hoguera', name: 'La Hoguera', rarity: 2, cost: 7, icon: 'flame', hue: 10,
+  def({ id: 'hoguera', name: 'Las Ascuas', rarity: 2, cost: 7, icon: 'flame', hue: 10,
     init: () => ({ v: 1 }),
     text: (t) => `Gana {x×0,25} Mult por cada objeto vendido. Se reinicia al derrotar a un {kGuardián} (ahora {x×${fx(t.st.v)}})`,
     otherSold: (t) => { t.st.v += 0.25; return { msg: '×' + fx(t.st.v), color: 'x' }; },
@@ -1354,10 +1357,10 @@ input[type=range] { width: 160px; accent-color: var(--gold); }
   def({ id: 'manoagil', name: 'Mano Ágil', rarity: 2, cost: 7, icon: 'hand', hue: 320,
     text: () => 'Los {kColores} y las {kEscaleras} pueden formarse con {k4 cartas}', flags: { fourFingers: true } });
 
-  def({ id: 'atajo', name: 'El Atajo', rarity: 2, cost: 6, icon: 'arrow', hue: 160,
+  def({ id: 'atajo', name: 'La Trocha', rarity: 2, cost: 6, icon: 'arrow', hue: 160,
     text: () => 'Las {kEscaleras} pueden tener huecos de 1 valor (p. ej. 3·5·6·S·C)', flags: { shortcut: true } });
 
-  def({ id: 'pareidolia', name: 'Pareidolia', rarity: 2, cost: 6, icon: 'eye', hue: 300,
+  def({ id: 'pareidolia', name: 'Mil Caras', rarity: 2, cost: 6, icon: 'eye', hue: 300,
     text: () => 'Todas las cartas cuentan como {kfiguras}', flags: { allFaces: true } });
 
   def({ id: 'oleaje', name: 'El Oleaje', rarity: 2, cost: 4, icon: 'wave', hue: 200,
@@ -1393,11 +1396,11 @@ input[type=range] { width: 160px; accent-color: var(--gold); }
     text: () => 'Cada {kCaballo} que puntúa da {x×1,5} Mult',
     card: (ctx, t, g, c) => (c.enh !== 'piedra' && c.rank === 11 ? { xmult: 1.5 } : null) });
 
-  def({ id: 'duo', name: 'El Dúo', rarity: 2, cost: 7, icon: 'twin', hue: 330,
+  def({ id: 'duo', name: 'Los Novios', rarity: 2, cost: 7, icon: 'twin', hue: 330,
     text: () => '{x×2} Mult si la mano jugada contiene {kPareja}', hand: (ctx) => (ctx.contains.pareja ? { xmult: 2 } : null) });
   def({ id: 'bandada', name: 'La Bandada', rarity: 2, cost: 7, icon: 'bird', hue: 190,
     text: () => '{x×2} Mult si la mano jugada contiene {kColor}', hand: (ctx) => (ctx.contains.color ? { xmult: 2 } : null) });
-  def({ id: 'familia', name: 'La Familia', rarity: 2, cost: 7, icon: 'house', hue: 25,
+  def({ id: 'familia', name: 'Los Vecinos', rarity: 2, cost: 7, icon: 'house', hue: 25,
     text: () => '{x×2} Mult si la mano jugada contiene {kDoble Pareja}', hand: (ctx) => (ctx.contains.doble ? { xmult: 2 } : null) });
 
   def({ id: 'herreria', name: 'La Herrería', rarity: 2, cost: 7, icon: 'anvil', hue: 210,
@@ -1405,7 +1408,7 @@ input[type=range] { width: 160px; accent-color: var(--gold); }
     hand: (ctx, t, g) => { const n = g.deck.filter((c) => c.enh === 'hierro').length; return n ? { xmult: 1 + 0.2 * n } : null; } });
 
   def({ id: 'cantera', name: 'La Cantera', rarity: 2, cost: 6, icon: 'mountain', hue: 30,
-    text: (t, g) => `{c+25} Fichas por cada carta de {kPiedra} en tu baraja${g ? ' (ahora {c+' + 25 * g.deck.filter((c) => c.enh === 'piedra').length + '})' : ''}`,
+    text: (t, g) => `{c+25} Fichas por cada carta de {kGranito} en tu baraja${g ? ' (ahora {c+' + 25 * g.deck.filter((c) => c.enh === 'piedra').length + '})' : ''}`,
     hand: (ctx, t, g) => { const n = g.deck.filter((c) => c.enh === 'piedra').length; return n ? { chips: 25 * n } : null; } });
 
   def({ id: 'mercader', name: 'El Mercader', rarity: 2, cost: 5, icon: 'stall', hue: 35,
@@ -1414,7 +1417,7 @@ input[type=range] { width: 160px; accent-color: var(--gold); }
   def({ id: 'cazador', name: 'Cazarrecompensas', rarity: 2, cost: 6, icon: 'target', hue: 10,
     text: () => 'Gana {$$8} al derrotar a un {kGuardián}', bossBeaten: () => ({ money: 8 }) });
 
-  def({ id: 'malabarista', name: 'Malabarista', rarity: 2, cost: 6, icon: 'juggle', hue: 100,
+  def({ id: 'malabarista', name: 'Manos Largas', rarity: 2, cost: 6, icon: 'juggle', hue: 100,
     text: () => '{k+1} carta en la mano', passive: { handSize: 1 } });
   def({ id: 'basurero', name: 'El Trapero', rarity: 2, cost: 6, icon: 'sack', hue: 70,
     text: () => '{k+1} Descarte por ronda', passive: { discards: 1 } });
@@ -1449,7 +1452,7 @@ input[type=range] { width: 160px; accent-color: var(--gold); }
     text: () => 'Cada {kRey} que tengas en la mano da {x×1,5} Mult',
     held: (ctx, t, g, c) => (c.enh !== 'piedra' && c.rank === 12 ? { xmult: 1.5 } : null) });
 
-  def({ id: 'vampira', name: 'La Vampira', rarity: 3, cost: 7, icon: 'fang', hue: 345,
+  def({ id: 'vampira', name: 'La Sanguijuela', rarity: 3, cost: 7, icon: 'fang', hue: 345,
     init: () => ({ v: 1 }),
     text: (t) => `Gana {x×0,1} Mult por cada carta {kmejorada} que puntúa y le roba la mejora (ahora {x×${fx(t.st.v)}})`,
     before: (ctx, t) => { let n = 0; for (const c of ctx.scoring) if (c.enh && !c._debuffed) { c.enh = null; n++; } if (n) { t.st.v += 0.1 * n; return { msg: '×' + fx(t.st.v), color: 'x' }; } return null; },
@@ -1492,7 +1495,7 @@ input[type=range] { width: 160px; accent-color: var(--gold); }
     bossBeaten: (t) => { t.st.v += 1; return { msg: '×' + fx(t.st.v), color: 'x' }; },
     hand: (ctx, t) => (t.st.v > 1 ? { xmult: t.st.v } : null) });
   def({ id: 'titania', name: 'Titania', rarity: 4, cost: 20, icon: 'butterfly', hue: 160, legendary: true,
-    text: () => 'Las cartas de tu mano de {kOro} o {kHierro} dan {x×2} Mult',
+    text: () => 'Las cartas de tu mano de {kÁurea} o {kHierro} dan {x×2} Mult',
     held: (ctx, t, g, c) => (c.enh === 'oro' || c.enh === 'hierro' ? { xmult: 2 } : null) });
 
   BR.TALISMANS = T;
@@ -1548,7 +1551,7 @@ input[type=range] { width: 160px; accent-color: var(--gold); }
   aug({ id: 'tasador', name: 'El Tasador', icon: 'scale', num: 'XVII',
     text: (g) => `Gana el valor de venta de tus Talismanes (máximo {$$50})${g ? ' (ahora {$$' + Math.min(50, g.talismans.reduce((s, t) => s + g.sellValue(t), 0)) + '})' : ''}`, sel: null,
     use: (g) => { const v = Math.min(50, g.talismans.reduce((s, t) => s + g.sellValue(t), 0)); g.money += v; return { money: v }; } });
-  aug({ id: 'rueda', name: 'La Rueda', icon: 'wheel', num: 'XVIII',
+  aug({ id: 'rueda', name: 'La Ruleta', icon: 'wheel', num: 'XVIII',
     text: () => '{p1 entre 4} de dar una edición ({kBrillante}, {kIridiscente} o {kAurora}) a un Talismán al azar', sel: null,
     can: (g) => g.talismans.some((t) => !t.ed),
     use: (g) => {
@@ -1611,15 +1614,15 @@ input[type=range] { width: 160px; accent-color: var(--gold); }
     text: () => 'Crea una copia de un Talismán al azar y {kdestruye} los demás', sel: null,
     can: (g) => g.talismans.length > 0,
     use: (g) => { const t = g.rng.pick(g.talismans); for (const o of g.talismans.slice()) if (o !== t) g.destroyTalisman(o); const c = g.newTalisman(t.id); c.ed = t.ed === 'eclipse' ? null : t.ed; c.st = JSON.parse(JSON.stringify(t.st)); g.addTalisman(c, true); return { talisman: c }; } });
-  for (const [sid, nm] of [['carmesi', 'Sello Carmesí'], ['zafiro', 'Sello Zafiro'], ['dorado', 'Sello Dorado'], ['violeta', 'Sello Violeta']]) {
+  for (const [sid, nm] of [['carmesi', 'Sello del Eco'], ['zafiro', 'Sello Estelar'], ['dorado', 'Sello del Mercader'], ['violeta', 'Sello del Augur']]) {
     ani({ id: 'sello_' + sid, name: nm, icon: 'seal', seal: sid,
       text: () => `Añade un {k${BR.SEALS[sid].name}} a 1 carta seleccionada`, sel: [1, 1],
       use: (g, cards) => { cards[0].seal = sid; return { changed: cards }; } });
   }
-  ani({ id: 'agujero', name: 'Agujero Negro', icon: 'blackhole', w: 0.4,
+  ani({ id: 'agujero', name: 'La Gran Conjunción', icon: 'blackhole', w: 0.4,
     text: () => 'Sube {k1 nivel} todas las manos', sel: null,
     use: (g) => { for (const h of BR.HAND_ORDER) g.levelUp(h, 1); return { levelUpAll: true }; } });
-  ani({ id: 'inmolacion', name: 'La Inmolación', icon: 'flame', 
+  ani({ id: 'inmolacion', name: 'La Quema', icon: 'flame', 
     text: () => '{kDestruye} 5 cartas al azar de tu mano y gana {$$20}', sel: null,
     can: (g) => g.hand.length > 0,
     use: (g) => { const cs = g.rng.shuffle(g.handCards().slice()).slice(0, 5); g.destroyCards(cs); g.money += 20; return { destroyed: cs, money: 20 }; } });
@@ -1635,14 +1638,14 @@ input[type=range] { width: 160px; accent-color: var(--gold); }
   ani({ id: 'clon', name: 'El Clon', icon: 'twin2',
     text: () => 'Crea {k2 copias} de 1 carta seleccionada en tu mano', sel: [1, 1],
     use: (g, cards) => { const added = []; for (let i = 0; i < 2; i++) { const c = g.makeCard(cards[0].suit, cards[0].rank); Object.assign(c, { enh: cards[0].enh, seal: cards[0].seal, ed: cards[0].ed, bonus: cards[0].bonus || 0 }); g.addCardToDeck(c, 'hand'); added.push(c); } return { added }; } });
-  ani({ id: 'aura', name: 'El Aura', icon: 'aurora',
+  ani({ id: 'aura', name: 'El Halo', icon: 'aurora',
     text: () => 'Da {kBrillante}, {kIridiscente} o {kAurora} a 1 carta seleccionada', sel: [1, 1],
     use: (g, cards) => { cards[0].ed = g.rng.weighted(['brillante', 'iridiscente', 'aurora'], (e) => ({ brillante: 50, iridiscente: 35, aurora: 15 }[e])); return { changed: cards }; } });
-  ani({ id: 'sigilo', name: 'El Sigilo', icon: 'rune',
+  ani({ id: 'sigilo', name: 'La Runa', icon: 'rune',
     text: () => 'Convierte todas las cartas de tu mano a un mismo {kpalo} aleatorio', sel: null,
     can: (g) => g.hand.length > 0,
     use: (g) => { const s = g.rng.pick(BR.SUITS); const cs = g.handCards(); for (const c of cs) c.suit = s; return { changed: cs }; } });
-  ani({ id: 'ouija', name: 'La Güija', icon: 'planchette',
+  ani({ id: 'ouija', name: 'La Tabla Parlante', icon: 'planchette',
     text: () => 'Convierte todas las cartas de tu mano a un mismo {kvalor} aleatorio. {k−1} carta en la mano', sel: null,
     can: (g) => g.hand.length > 0,
     use: (g) => { const r = g.rng.pick(BR.RANKS); const cs = g.handCards(); for (const c of cs) c.rank = r; g.base.handSize -= 1; return { changed: cs }; } });
@@ -2289,7 +2292,7 @@ input[type=range] { width: 160px; accent-color: var(--gold); }
         this.counts.bosses++;
         tev.push(...this.fire('bossBeaten'));
         const inv = this.tags.filter((t) => t === 'inversor').length;
-        if (inv) { lines.push({ label: 'Insignia del Inversor', value: 25 * inv, kind: 'tag' }); this.tags = this.tags.filter((t) => t !== 'inversor'); }
+        if (inv) { lines.push({ label: 'Insignia del Mecenas', value: 25 * inv, kind: 'tag' }); this.tags = this.tags.filter((t) => t !== 'inversor'); }
       }
       for (const e of tev) if (e.money) lines.push({ label: e.name, value: e.money, kind: 'tal', uid: e.uid });
       // el dinero de los talismanes se cobra junto al resto
@@ -2706,7 +2709,7 @@ input[type=range] { width: 160px; accent-color: var(--gold); }
     { id: 'biblio', name: 'Bibliófilo', icon: 'book', desc: 'Descubre 40 Talismanes', check: () => M.countDisc('tal') >= 40 },
     { id: 'prisa', name: 'Prisa nocturna', icon: 'feather', desc: 'Salta 3 envites en una partida', check: (e) => e.g && e.g.counts.skips >= 3 },
     { id: 'tahur', name: 'Tahúr', icon: 'twins', desc: 'Desbloquea todas las barajas', check: () => M.data.decks.length >= BR.DECKS.length },
-    { id: 'dorada', name: 'Llama eterna', icon: 'candle', desc: 'Gana una partida en Vela Dorada', check: (e) => e.type === 'win' && e.g.stake >= 5 },
+    { id: 'dorada', name: 'Llama eterna', icon: 'candle', desc: 'Gana una partida en Vela de Medianoche', check: (e) => e.type === 'win' && e.g.stake >= 5 },
     { id: 'diario', name: 'Fiel a la cita', icon: 'hourglass', desc: 'Llega a la Noche 3 en un Reto del día', check: (e) => e.g && e.g.daily && e.g.ante >= 3 },
   ];
   M.checkAch = function (ev) {
@@ -3830,7 +3833,7 @@ void main(){
       return `<span class="k-k">${v}</span>`;
     });
   };
-  const cardName = (c) => (c.enh === 'piedra' ? 'Carta de Piedra' : `${BR.RANK_INFO[c.rank].name} de ${BR.SUIT_INFO[c.suit].name}`);
+  const cardName = (c) => (c.enh === 'piedra' ? 'Carta de Granito' : `${BR.RANK_INFO[c.rank].name} de ${BR.SUIT_INFO[c.suit].name}`);
   BR.cardName = cardName;
 
   /* ---------------- tooltips ---------------- */
@@ -4083,7 +4086,7 @@ void main(){
     S.open(`<div class="modal" style="width:min(760px,100%)"><button class="close">×</button><h2>La partida</h2>
       <div class="subtitle">${BR.DECK_BY_ID[g.deckId].name} · ${BR.STAKES[g.stake].name} · Semilla <b style="color:var(--gold2);font-style:normal;letter-spacing:.1em">${g.seed}</b></div>
       <table class="handtable">${rows}</table>
-      <h3 style="font-family:Cinzel;color:var(--gold2);margin:16px 0 8px">Tu baraja (${g.deck.length} naipes${stones ? ', ' + stones + ' de piedra' : ''})</h3>
+      <h3 style="font-family:Cinzel;color:var(--gold2);margin:16px 0 8px">Tu baraja (${g.deck.length} naipes${stones ? ', ' + stones + ' de granito' : ''})</h3>
       <div class="decklist">${dl}</div>
       <h3 style="font-family:Cinzel;color:var(--gold2);margin:16px 0 8px">Privilegios</h3><div>${vouch}</div>
       <h3 style="font-family:Cinzel;color:var(--gold2);margin:16px 0 8px">Insignias pendientes</h3><div>${tags}</div>
@@ -4145,7 +4148,7 @@ void main(){
   'use strict';
   const $ = (id) => document.getElementById(id);
   const V = BR.View, S = BR.Screens, FX = BR.FX, AU = BR.Audio, Meta = BR.Meta;
-  const UI = { g: null, sel: [], packSel: [], selTal: null, selCons: null, selShop: null, busy: false, drag: null, flip: new Set(), scoring: null, touch: false, cw: 96, ch: 134 };
+  const UI = { spawnFrom: {}, g: null, sel: [], packSel: [], selTal: null, selCons: null, selShop: null, busy: false, drag: null, flip: new Set(), scoring: null, touch: false, cw: 96, ch: 134 };
   BR.UI = UI;
   BR.speedMult = 1;
   Object.defineProperty(BR, 'uiBusy', { get: () => UI.busy });
@@ -4212,7 +4215,7 @@ void main(){
       const pos = rowLayout(zr('z-tal'), order.length, cw, ch);
       order.forEach((uid, i) => {
         const t = g.talismans.find((x) => x.uid === uid); if (!t) return;
-        D.push({ key: uid, kind: 'tal', obj: t, x: pos[i].x, y: pos[i].y, z: 10 + i,
+        D.push({ key: uid, kind: 'tal', obj: t, x: pos[i].x, y: pos[i].y, z: 10 + i, from: UI.spawnFrom[uid],
           cls: (UI.selTal === uid ? 'sel' : '') + (t._disabled ? ' disabled-tal' : ''),
           drag: 'tal', onClick: () => clickTal(uid), tip: () => S.tipHTML('tal', t, g) });
       });
@@ -4223,7 +4226,7 @@ void main(){
     {
       const pos = rowLayout(zr('z-cons'), g.consumables.length, cw, ch, { gap: cw * 0.08 });
       g.consumables.forEach((k, i) => {
-        D.push({ key: k.uid, kind: 'cons', obj: k, x: pos[i].x, y: pos[i].y, z: 10 + i, cls: UI.selCons === k.uid ? 'sel' : '',
+        D.push({ key: k.uid, kind: 'cons', obj: k, x: pos[i].x, y: pos[i].y, z: 10 + i, from: UI.spawnFrom[k.uid], cls: UI.selCons === k.uid ? 'sel' : '',
           onClick: () => clickCons(k.uid), tip: () => S.tipHTML('cons', k, g) });
       });
       $('cons-count').innerHTML = `<span class="${g.consumables.length >= g.consSlots() ? 'full' : ''}">${g.consumables.length}/${g.consSlots()}</span>`;
@@ -4305,6 +4308,7 @@ void main(){
       });
     }
     V.sync(D);
+    UI.spawnFrom = {};
     const showHint = g.phase === 'round' && Meta.data.stats.hands < 2 && !UI.sel.length && !UI.busy && !g.played.length;
     const hint = $('hint');
     if (hint) { hint.classList.toggle('show', showHint); }
@@ -4748,7 +4752,7 @@ void main(){
     UI.sel = [];
     AU.sfx.whoosh();
     showEvents(res.ev);
-    if (res.created.length) { AU.sfx.levelup(); S.toast('✦ El Lacre Violeta te concede un Augurio', 'unlock'); }
+    if (res.created.length) { AU.sfx.levelup(); S.toast('✦ El Lacre del Augur te concede un Augurio', 'unlock'); }
     const order = res.drawn.slice();
     UI.dealDelay = (id) => { const i = order.indexOf(id); return i >= 0 ? 150 + i * 70 : 0; };
     render();
@@ -4851,15 +4855,21 @@ void main(){
     const g = UI.g;
     const it = where === 'items' ? g.shop.items[idx] : where === 'packs' ? g.shop.packs[idx] : g.shop.voucher;
     const before = g.money;
+    const sr0 = V.rect(key);
     const r = g.buy(where, idx, useNow);
     UI.selShop = null;
+    if (sr0) {
+      const fr = { x: sr0.left, y: sr0.top };
+      if (r.talisman) UI.spawnFrom[r.talisman.uid] = fr;
+      if (r.consumable) UI.spawnFrom[r.consumable.uid] = fr;
+    }
     if (r.err) { AU.sfx.error(); S.toast(r.err, 'err'); V.shakeIt(key); render(); return; }
     AU.sfx.buy();
     const p = V.center(key);
     if (p) FX.coins(p[0], p[1], 8);
     animateMoney(before, g.money);
     if (r.voucher) { AU.sfx.levelup(); banner(BR.VOUCHER_BY_ID[r.voucher].name, '', BR.VOUCHER_BY_ID[r.voucher].desc.replace(/\{[a-z$]([^}]*)\}/gi, '$1')); }
-    if (r.talisman) { V.exit(key, { mode: 'fade' }); }
+    if (r.talisman || r.consumable) { const s0 = V.sprites.get(key); if (s0) { s0.el.remove(); V.sprites.delete(key); } }
     if (r.pack) { AU.sfx.pack(); UI.packSel = []; if (p) FX.burst(p[0], p[1], { n: 40, colors: ['#fff6dc', '#ffd36e', '#c77dff'], speed: 8, life: 800, size: 4, shape: 'star' }); }
     render();
     if (r.used) { V.exit(key, { mode: 'dissolve' }); render(); UI.busy = true; await animateConsResult(r.used); UI.busy = false; render(); }
@@ -4979,10 +4989,12 @@ void main(){
     const c = g.pack.choices.find((x) => x && x.key === key); if (!c) return;
     const p = V.center(key);
     UI.busy = true;
+    const pr0 = V.rect(key);
     const res = g.pickFromPack(key, UI.packSel.slice());
+    if (res.talisman && pr0 && c.kind === 'tal') { UI.spawnFrom[res.talisman.uid] = { x: pr0.left, y: pr0.top }; const s0 = V.sprites.get(key); if (s0) { s0.el.remove(); V.sprites.delete(key); } }
     if (res.err) { UI.busy = false; AU.sfx.error(); S.toast(res.err, 'err'); V.shakeIt(key); return; }
     UI.selShop = null;
-    if (c.kind === 'tal' || c.kind === 'card') { AU.sfx.buy(); V.exit(key, { mode: 'fade' }); }
+    if (c.kind === 'tal' || c.kind === 'card') { AU.sfx.buy(); }
     else { V.exit(key, { mode: 'dissolve' }); if (p) FX.burst(p[0], p[1], { n: 30, colors: ['#e6c8ff', '#9fd8ff', '#fff'], speed: 6, life: 800, size: 4, shape: 'star' }); }
     if (c.kind === 'card') { const dp = deckPos(); V.exit(key, { mode: 'fly', x: dp.x, y: dp.y, down: false, scale: 0.6 }); }
     UI.packSel = [];
@@ -5236,6 +5248,7 @@ void main(){
     computeSize();
     bind();
     showMenu();
+    if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol) && !window.__BRISKA_SINGLE__) navigator.serviceWorker.register('sw.js').catch(() => {});
     // las fuentes cambian medidas
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { computeSize(); render(); });
   }

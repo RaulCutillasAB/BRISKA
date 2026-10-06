@@ -9,6 +9,8 @@ html = html.replace(/<script src="([^"]+)"><\/script>/g, (m, src) => {
   if (code.includes('</script')) throw new Error('</script> dentro de ' + src);
   return `<script>\n${code}\n</script>`;
 });
+html = html.replace(/<link rel="manifest"[^>]*>\n?/, '').replace(/<link rel="apple-touch-icon"[^>]*>\n?/, '');
+html = html.replace('<head>', '<head>\n<script>window.__BRISKA_SINGLE__ = true;</script>');
 fs.mkdirSync(path.join(root, 'dist'), { recursive: true });
 const out = path.join(root, 'dist', 'briska.html');
 fs.writeFileSync(out, html);

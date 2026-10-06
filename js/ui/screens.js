@@ -19,7 +19,7 @@
       return `<span class="k-k">${v}</span>`;
     });
   };
-  const cardName = (c) => (c.enh === 'piedra' ? 'Carta de Piedra' : `${BR.RANK_INFO[c.rank].name} de ${BR.SUIT_INFO[c.suit].name}`);
+  const cardName = (c) => (c.enh === 'piedra' ? 'Carta de Granito' : `${BR.RANK_INFO[c.rank].name} de ${BR.SUIT_INFO[c.suit].name}`);
   BR.cardName = cardName;
 
   /* ---------------- tooltips ---------------- */
@@ -272,7 +272,7 @@
     S.open(`<div class="modal" style="width:min(760px,100%)"><button class="close">×</button><h2>La partida</h2>
       <div class="subtitle">${BR.DECK_BY_ID[g.deckId].name} · ${BR.STAKES[g.stake].name} · Semilla <b style="color:var(--gold2);font-style:normal;letter-spacing:.1em">${g.seed}</b></div>
       <table class="handtable">${rows}</table>
-      <h3 style="font-family:Cinzel;color:var(--gold2);margin:16px 0 8px">Tu baraja (${g.deck.length} naipes${stones ? ', ' + stones + ' de piedra' : ''})</h3>
+      <h3 style="font-family:Cinzel;color:var(--gold2);margin:16px 0 8px">Tu baraja (${g.deck.length} naipes${stones ? ', ' + stones + ' de granito' : ''})</h3>
       <div class="decklist">${dl}</div>
       <h3 style="font-family:Cinzel;color:var(--gold2);margin:16px 0 8px">Privilegios</h3><div>${vouch}</div>
       <h3 style="font-family:Cinzel;color:var(--gold2);margin:16px 0 8px">Insignias pendientes</h3><div>${tags}</div>
