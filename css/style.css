@@ -67,6 +67,7 @@ button { font-family: inherit; }
 #hand-name { font-family: 'Cinzel', serif; font-weight: 700; font-size: 18px; min-height: 24px; color: var(--gold2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #hand-name small { font-family: 'Outfit'; font-weight: 600; color: var(--muted); font-size: 12px; margin-left: 6px; }
 #hand-name.blocked { color: var(--mult2); }
+#hand-name .cantetag { color: #2a1404; background: linear-gradient(180deg, #ffe08a, #e0a030); padding: 1px 6px; border-radius: 6px; font-weight: 800; animation: flash .6s; }
 .cm { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 6px; }
 .cbox { flex: 1; min-width: 0; height: 46px; border-radius: 10px; display: grid; place-items: center; font-family: 'Outfit'; font-weight: 800; font-size: 26px; color: #fff; text-shadow: 0 2px 0 rgba(0, 0, 0, .35); position: relative; overflow: hidden; }
 .cbox span { position: relative; z-index: 1; transition: transform .12s; display: inline-block; }
@@ -441,13 +442,13 @@ input[type=range] { width: 160px; accent-color: var(--gold); }
 .menu-m { display: none; border: 0; color: var(--gold2); font-size: 20px; cursor: pointer; font-weight: 800; }
 
 /* ======================= RESPONSIVE ======================= */
-@media (max-width: 900px) and (min-width: 721px) {
+@media (max-width: 900px) and (min-width: 721px) and (orientation: landscape) {
   :root { --side-w: 200px; }
   .bignum { font-size: 24px; }
   #round-score { font-size: 26px; }
   .cbox { font-size: 20px; height: 40px; }
 }
-@media (max-height: 640px) and (min-width: 721px) {
+@media (max-height: 640px) and (min-width: 721px) and (orientation: landscape) {
   #logo-mini { display: none; }
   .panel { padding: 7px 10px; }
   #bb-desc { font-size: 12px; }
@@ -462,7 +463,7 @@ input[type=range] { width: 160px; accent-color: var(--gold); }
   #handbtns .btn.play, #handbtns .btn.discard { min-width: 120px; }
 }
 /* móvil vertical */
-@media (max-width: 720px) {
+@media (max-width: 720px), (orientation: portrait) and (max-width: 1100px) {
   #app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; padding: 8px; gap: 8px; padding-top: max(8px, env(safe-area-inset-top)); }
   #side { display: grid; grid-template-columns: 1.15fr 1fr; gap: 6px; }
   #logo-mini { display: none; }
@@ -528,7 +529,7 @@ input[type=range] { width: 160px; accent-color: var(--gold); }
   #tooltip { max-width: 230px; min-width: 160px; }
 }
 /* apaisado bajo (móviles en horizontal) */
-@media (max-height: 520px) and (min-width: 721px) {
+@media (max-height: 520px) and (min-width: 721px) and (orientation: landscape) {
   #app { padding: 8px; gap: 8px; }
   :root { --side-w: 210px; }
   #side { gap: 5px; }
@@ -577,7 +578,7 @@ input[type=range] { width: 160px; accent-color: var(--gold); }
   .menubtns { margin-top: 8px; gap: 6px; }
   .menubtns .btn { padding: 8px 16px; font-size: 14px; }
 }
-@media (max-width: 720px) {
+@media (max-width: 720px), (orientation: portrait) and (max-width: 1100px) {
   .lg { display: none; }
   #z-deck { visibility: hidden; }
 }

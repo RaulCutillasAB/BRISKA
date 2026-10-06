@@ -202,7 +202,7 @@
     { id: 'sed', name: 'La Sed', icon: 'cup', color: '#c03a50', desc: 'Las cartas de {sCopas} están debilitadas', min: 1, debuff: (c) => c.suit === 'copas' },
     { id: 'oxido', name: 'El Óxido', icon: 'sword', color: '#3a6cb0', desc: 'Las cartas de {sEspadas} están debilitadas', min: 1, debuff: (c) => c.suit === 'espadas' },
     { id: 'carcoma', name: 'La Carcoma', icon: 'staff', color: '#3a8a52', desc: 'Las cartas de {sBastos} están debilitadas', min: 1, debuff: (c) => c.suit === 'bastos' },
-    { id: 'muralla', name: 'El Bastión', icon: 'wall', color: '#7a6a5a', desc: 'Objetivo enorme', min: 2, targetMult: 4 },
+    { id: 'muralla', name: 'El Bastión', icon: 'wall', color: '#7a6a5a', desc: 'El objetivo es el {kdoble} de lo habitual', min: 2, targetMult: 4 },
     { id: 'aguja', name: 'El Hilo', icon: 'needle', color: '#5a8a8a', desc: 'Solo dispones de {k1 Mano}', min: 2, targetMult: 1, start: (g) => { g.r.handsLeft = 1; } },
     { id: 'ojo', name: 'El Vigía', icon: 'eye', color: '#3f6fd0', desc: 'No puedes repetir el mismo tipo de mano', min: 3,
       check: (g, ev) => g.r.typesPlayed.includes(ev.type) ? 'El Vigía ya ha visto esa mano' : null },
@@ -229,7 +229,8 @@
     { id: 'eclipse', name: 'La Luna de Sangre', icon: 'eclipse', color: '#c0203a', final: true, desc: 'Desactiva un Talismán al azar en cada mano', start: (g) => g.pickEclipse(), after: (g) => g.pickEclipse() },
     { id: 'reina', name: 'La Reina sin Rostro', icon: 'mask', color: '#d0d0e8', final: true, desc: 'Todos los {kAses} y {kfiguras} están debilitados', debuff: (c, g) => c.rank === 1 || g.isFace(c, true) },
     { id: 'leviatan', name: 'Leviatán', icon: 'wave', color: '#1a6a7a', final: true, desc: '{k−2} cartas en la mano', handSize: -2 },
-    { id: 'tejedor', name: 'El Tejedor', icon: 'spiral', color: '#7a5ab0', final: true, desc: 'Juegas todas las manos como si fueran de nivel 1', levelOne: true },
+    { id: 'tejedor', name: 'El Tejedor', icon: 'spiral', color: '#7a5ab0', final: true, desc: 'Las cartas del palo de {kTriunfo} están debilitadas, y el Triunfo cambia tras cada mano',
+      debuff: (c, g) => g.r && c.suit === g.r.trump, after: (g) => { g.r.trump = g.rng.pick(BR.SUITS.filter((s) => s !== g.r.trump)); } },
   ];
   BR.BOSS_BY_ID = Object.fromEntries(BR.BOSSES.map((b) => [b.id, b]));
   BR.VOUCHER_BY_ID = Object.fromEntries(BR.VOUCHERS.map((b) => [b.id, b]));

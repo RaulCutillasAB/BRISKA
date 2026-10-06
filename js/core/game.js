@@ -323,7 +323,13 @@
       if (b && b.halve) { chips = Math.max(1, Math.floor(chips / 2)); mult = Math.max(1, Math.floor(mult / 2)); }
       let blocked = null;
       if (b && b.check) blocked = b.check(this, ev, cards);
-      return { type: ev.type, level: lv, chips, mult, scoring: ev.scoring.map((c) => c.id), blocked };
+      let cante = null;
+      for (const s of BR.SUITS) {
+        const ok = (r) => cards.some((c) => !c._debuffed && c.enh !== 'piedra' && c.rank === r && c.suit === s);
+        if (ok(11) && ok(12)) { const k = this.r && s === this.r.trump ? 'cuarenta' : 'veinte'; if (!cante || k === 'cuarenta') cante = k; }
+      }
+      if (cante) chips += (cante === 'cuarenta' ? 40 : 20) * (this.flags.canteMult || 1);
+      return { type: ev.type, level: lv, chips, mult, scoring: ev.scoring.map((c) => c.id), blocked, cante };
     }
 
     playHand(ids) {

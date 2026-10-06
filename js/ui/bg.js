@@ -5,7 +5,7 @@
   let gl, prog, canvas, uni = {}, raf = 0, start = performance.now();
   let cur = [[0.05, 0.04, 0.13], [0.23, 0.11, 0.37], [0.75, 0.52, 0.23]];
   let target = cur.map((c) => c.slice());
-  let quality = 'high', pulse = 0, spin = 0;
+  let quality = 'high', pulse = 0, spin = 0, dyn = 1, last = 0, slow = 0, fast = 0;
 
   const VS = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
   const FS = `precision mediump float;
@@ -54,14 +54,21 @@ void main(){
 
   function resize() {
     if (!canvas) return;
-    const s = quality === 'high' ? 0.5 : 0.28;
+    const s = (quality === 'high' ? 0.5 : 0.28) * dyn;
     canvas.width = Math.max(64, Math.floor(innerWidth * s));
     canvas.height = Math.max(64, Math.floor(innerHeight * s));
     if (gl) gl.viewport(0, 0, canvas.width, canvas.height);
   }
   function frame(now) {
     raf = requestAnimationFrame(frame);
-    if (quality === 'off' || !gl) return;
+    if (quality === 'off' || !gl || document.hidden) return;
+    const dt = now - last;
+    if (dt < 30) return; // ~30 fps: el fondo es lento
+    last = now;
+    // resolución dinámica según rendimiento
+    if (dt > 55) { slow++; fast = 0; } else if (dt < 38) { fast++; slow = Math.max(0, slow - 1); }
+    if (slow > 20 && dyn > 0.35) { dyn *= 0.8; slow = 0; resize(); }
+    else if (fast > 240 && dyn < 1) { dyn = Math.min(1, dyn * 1.15); fast = 0; resize(); }
     for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) cur[i][j] += (target[i][j] - cur[i][j]) * 0.03;
     pulse *= 0.95; spin += pulse * 0.02;
     gl.uniform2f(uni.r, canvas.width, canvas.height);

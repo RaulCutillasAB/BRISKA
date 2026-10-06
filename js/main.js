@@ -21,8 +21,10 @@
   }
 
   /* ======================= tamaños y disposición ======================= */
+  const MOBILE_Q = matchMedia('(max-width: 720px), (orientation: portrait) and (max-width: 1100px)');
+  const isMobile = () => MOBILE_Q.matches;
   function computeSize() {
-    const mobile = innerWidth <= 720;
+    const mobile = isMobile();
     let cw;
     if (mobile) cw = Math.min((innerWidth - 16) / 5.3, innerHeight / 8.2);
     else {
@@ -88,9 +90,9 @@
     }
     // mazo
     const showDeck = g.phase === 'round' || (g.phase === 'pack' && g.pack && g.pack.hand);
-    if (showDeck && innerWidth > 720) {
+    if (showDeck && !isMobile()) {
       const p = deckPos();
-      const sc = innerWidth <= 720 ? 0.7 : 1;
+      const sc = 1;
       D.push({ key: 'deck', kind: 'deck', obj: {}, x: p.x - (cw - cw * sc) / 2, y: p.y - (ch - ch * sc) / 2, scale: sc, z: 5, onClick: () => { AU.sfx.button(); S.runInfo(g); }, tip: () => `<div class="tt-title">Mazo</div><div class="tt-body">${g.phase === 'round' ? g.drawPile.length : g.deck.length} cartas por robar de ${g.deck.length}</div>` });
     }
     const dp = deckPos();
@@ -193,7 +195,7 @@
       else { target = Math.floor(BR.anteBase(g.ante + 1, g.stake) * (g.flags.targetMult || 1)); rew = g.stake >= 1 ? 0 : 3; }
     }
     setHTML('bb-target', BR.fmt(target));
-    setHTML('bb-reward', rew ? 'Recompensa: ' + '$'.repeat(Math.min(rew, 10)) : 'Sin recompensa');
+    setHTML('bb-reward', rew ? 'Recompensa: ' + (rew <= 5 ? '$'.repeat(rew) : '$' + rew) : 'Sin recompensa');
     setHTML('bb-desc', g.phase === 'shop' ? 'Próximo: ' + (g.blindIdx === 2 ? 'Noche ' + (g.ante + 1) : BR.RIVALS[g.blindKind(g.blindIdx + 1)]?.name || BR.BOSS_BY_ID[g.bossId].name) : desc);
     if (!UI.animScore) {
       const sc = inRound ? g.r.score : 0;
@@ -233,7 +235,7 @@
     if (g.phase === 'round' && UI.sel.length) {
       const p = g.previewHand(UI.sel);
       if (p) {
-        hn.innerHTML = `${BR.HANDS[p.type].name}<small>nv.${p.level}</small>`;
+        hn.innerHTML = `${BR.HANDS[p.type].name}<small>nv.${p.level}</small>${p.cante ? `<small class="cantetag">${p.cante === 'cuarenta' ? '¡Las 40!' : '¡Las 20!'}</small>` : ''}`;
         if (p.blocked) { hn.classList.add('blocked'); hn.innerHTML = '⚠ ' + p.blocked; }
         setChipsMult(p.chips, p.mult);
         return;
@@ -279,7 +281,7 @@
           ${medal}
           <div class="lbl">Objetivo</div>
           <div class="btarget">${BR.fmt(g.blindTarget(i))}</div>
-          <div class="reward">${rew ? '$'.repeat(Math.min(rew, 10)) + (rew > 10 ? '+' : '') : 'Sin recompensa'}</div>
+          <div class="reward">${rew ? (rew <= 5 ? '$'.repeat(rew) : '$' + rew) : 'Sin recompensa'}</div>
           <div class="bdesc">${isBoss ? BR.rich(b.desc) : i === 0 ? 'Un primer envite para calentar las manos.' : 'La apuesta sube. Demuestra lo que vales.'}</div>
           ${state === 'current' ? '<button class="btn play" data-act="select">Elegir</button>' : state === 'past' ? '<div class="done-mark">' + (g.skippedIdx && g.skippedIdx.includes(g.ante + ':' + i) ? 'SALTADO' : 'SUPERADO') + '</div>' : '<div class="done-mark" style="opacity:.6">PRÓXIMO</div>'}
         </div>${foot}</div>`;
@@ -383,7 +385,10 @@
     const it = where === 'items' ? g.shop.items[idx] : where === 'packs' ? g.shop.packs[idx] : g.shop.voucher;
     const cost = g.itemCost(it);
     const label = where === 'packs' ? 'Abrir' : where === 'voucher' ? 'Canjear' : 'Comprar';
-    const acts = [{ label: `${label} <b>${cost ? '$' + cost : 'gratis'}</b>`, cls: 'gold', disabled: !g.canAfford(cost), fn: () => buy(where, idx, key) }];
+    let noRoom = null;
+    if (it.kind === 'tal' && g.talismans.length >= g.talSlots() && it.ed !== 'eclipse') noRoom = 'Sin huecos: vende un Talismán';
+    if ((it.kind === 'aug' || it.kind === 'con' || it.kind === 'ani') && g.consSpace() <= 0) noRoom = 'Sin huecos de consumible';
+    const acts = [{ label: noRoom || (!g.canAfford(cost) ? `Te faltan <b>$${cost - g.money - g.debtLimit()}</b>` : `${label} <b>${cost ? '$' + cost : 'gratis'}</b>`), cls: 'gold', disabled: !g.canAfford(cost) || !!noRoom, fn: () => buy(where, idx, key) }];
     if (where === 'items' && it.kind !== 'tal') {
       const d = BR.consDef({ type: it.kind, id: it.id });
       if (!d.sel) acts.push({ label: 'Comprar y usar', cls: 'blue', disabled: !g.canAfford(cost) || (d.can && !d.can(g)), fn: () => buy(where, idx, key, true) });
@@ -1067,6 +1072,13 @@
       S.showTip(`<div class="tt-title">Palo de Triunfo</div><div class="tt-body">${BR.rich(`Las cartas de este palo dan {m+${g.flags.trumpMult || 1}} Mult al puntuar. Caballo + Rey del Triunfo: {kLas Cuarenta} ({c+${40 * (g.flags.canteMult || 1)}} Fichas)`)}</div>`, $('trumpbox').getBoundingClientRect(), 'below');
     };
     $('trumpbox').onpointerleave = () => S.hideTip();
+    const mbox = $('st-money').parentElement;
+    mbox.onpointerenter = () => {
+      const g = UI.g; if (!g) return;
+      const it = g.flags.noInterest ? 'Esta baraja no genera intereses.' : `Al cobrar ganas {$$1} de interés por cada {$$5} que tengas (máximo {$$${g.interestCap()}}).`;
+      S.showTip(`<div class="tt-title">Dinero</div><div class="tt-body">${BR.rich(it)}</div>${g.debtLimit() ? `<div class="tt-extra">Puedes endeudarte hasta -$${g.debtLimit()}</div>` : ''}`, mbox.getBoundingClientRect(), 'below');
+    };
+    mbox.onpointerleave = () => S.hideTip();
     document.addEventListener('pointerdown', (e) => {
       if (e.pointerType === 'touch') UI.touch = true; else if (e.pointerType === 'mouse') UI.touch = false;
       AU.init();
