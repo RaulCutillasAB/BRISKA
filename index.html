@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0d0a1a">
+<meta name="description" content="Briska — un roguelike de naipes españoles bajo las estrellas.">
+<title>Briska</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Cinzel+Decorative:wght@700;900&family=Cormorant+Garamond:ital,wght@0,500;1,500&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='8' y='4' width='48' height='56' rx='8' fill='%233b1d5c' stroke='%23f2c96b' stroke-width='4'/%3E%3Cpath d='M32 14l5 13 13 5-13 5-5 13-5-13-13-5 13-5z' fill='%23f2c96b'/%3E%3C/svg%3E">
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div id="shaker">
+  <div id="app" class="phase-menu">
+    <aside id="side">
+      <div id="logo-mini">BRISKA</div>
+      <section id="blindbox" class="panel">
+        <div class="bb-head"><span id="bb-name">—</span></div>
+        <div class="bb-body">
+          <div id="bb-medal"></div>
+          <div class="bb-info">
+            <div class="lbl">Objetivo</div>
+            <div id="bb-target" class="bignum">0</div>
+            <div id="bb-reward" class="reward"></div>
+          </div>
+        </div>
+        <div id="bb-desc"></div>
+      </section>
+      <section class="panel" id="scorebox">
+        <div class="lbl">Puntuación de la ronda</div>
+        <div id="round-score" class="bignum score">0</div>
+        <div id="score-bar"><div id="score-fill"></div></div>
+      </section>
+      <section class="panel" id="handbox">
+        <div id="hand-name">&nbsp;</div>
+        <div class="cm">
+          <div id="chips-box" class="cbox chips"><span id="chips-val">0</span></div>
+          <div class="times">×</div>
+          <div id="mult-box" class="cbox mult"><span id="mult-val">0</span></div>
+        </div>
+        <div id="hand-total"></div>
+      </section>
+      <section class="panel" id="statsbox">
+        <div class="stat"><div class="lbl">Manos</div><div id="st-hands" class="sv hands">0</div></div>
+        <div class="stat"><div class="lbl">Descartes</div><div id="st-discards" class="sv discards">0</div></div>
+        <div class="stat money"><div class="lbl">Dinero</div><div id="st-money" class="sv gold">$0</div></div>
+        <div class="stat"><div class="lbl">Noche</div><div class="sv"><span id="st-ante">1</span><small>/8</small></div></div>
+        <div class="stat"><div class="lbl">Ronda</div><div id="st-round" class="sv">1</div></div>
+        <div class="stat trump" id="trumpbox"><div class="lbl">Triunfo</div><div id="st-trump" class="sv"></div></div>
+        <button class="stat menu-m" id="btn-menu-m" aria-label="Menú">☰</button>
+      </section>
+      <div id="sidebtns">
+        <button class="btn small ghost" id="btn-info">Info partida</button>
+        <button class="btn small ghost" id="btn-options">Opciones</button>
+      </div>
+    </aside>
+    <main id="main">
+      <div id="topbar">
+        <div class="zone-wrap" id="talwrap"><div id="z-tal" class="zone"></div><div class="zone-label"><span id="tal-count">0/5</span> Talismanes</div></div>
+        <div class="zone-wrap" id="conswrap"><div id="z-cons" class="zone"></div><div class="zone-label"><span id="cons-count">0/2</span> Consumibles</div></div>
+      </div>
+      <div id="center">
+        <div id="z-play" class="zone"></div>
+        <div id="banner"></div>
+        <!-- selección de envite -->
+        <div id="blindsel" class="phasepanel"></div>
+        <!-- cobro -->
+        <div id="cashout" class="phasepanel"></div>
+        <!-- feria -->
+        <div id="shop" class="phasepanel">
+          <div class="shop-head">
+            <div class="shop-title"><span class="awning"></span>La Feria</div>
+            <div class="shop-btns">
+              <button class="btn red" id="btn-next">Siguiente envite</button>
+              <button class="btn green" id="btn-reroll">Renovar <b id="reroll-cost">$5</b></button>
+            </div>
+          </div>
+          <div class="shop-row"><div id="z-shop" class="zone"></div></div>
+          <div class="shop-row two">
+            <div class="shop-sub"><div class="sublbl">Privilegio de la Noche</div><div id="z-voucher" class="zone"></div></div>
+            <div class="shop-sub"><div class="sublbl">Sobres</div><div id="z-packs" class="zone"></div></div>
+          </div>
+        </div>
+        <!-- sobre -->
+        <div id="packpanel" class="phasepanel">
+          <div class="pack-head"><div id="pack-title"></div><div id="pack-sub"></div></div>
+          <div id="z-pack" class="zone"></div>
+          <button class="btn ghost" id="btn-skippack">Saltar</button>
+        </div>
+      </div>
+      <div id="bottom">
+        <div id="z-hand" class="zone"></div>
+        <div id="handbtns">
+          <button class="btn play" id="btn-play">Jugar mano</button>
+          <div class="sortbtns"><div class="sortlbl">Ordenar</div><button class="btn tiny" id="btn-sort-rank">Valor</button><button class="btn tiny" id="btn-sort-suit">Palo</button></div>
+          <button class="btn discard" id="btn-discard">Descartar</button>
+        </div>
+        <div id="deckpile"><div id="z-deck"></div><div id="deck-count">40/40</div></div>
+      </div>
+    </main>
+  </div>
+  <div id="stage"></div>
+</div>
+<div id="pops"></div>
+<canvas id="fx"></canvas>
+<div id="tooltip"></div>
+<div id="actionmenu"></div>
+<div id="overlay"></div>
+<div id="toasts"></div>
+
+<script src="js/core/rng.js"></script>
+<script src="js/core/data.js"></script>
+<script src="js/core/hands.js"></script>
+<script src="js/core/talismans.js"></script>
+<script src="js/core/consumables.js"></script>
+<script src="js/core/scoring.js"></script>
+<script src="js/core/game.js"></script>
+<script src="js/core/meta.js"></script>
+<script src="js/ui/icons.js"></script>
+<script src="js/ui/art.js"></script>
+<script src="js/ui/audio.js"></script>
+<script src="js/ui/bg.js"></script>
+<script src="js/ui/fx.js"></script>
+<script src="js/ui/view.js"></script>
+<script src="js/ui/screens.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
