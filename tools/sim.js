@@ -1,136 +1,78 @@
-// Bot simple que juega partidas completas para comprobar estabilidad y equilibrio.
-const BR = require('./load')();
-const N = +process.argv[2] || 200;
-const deckArg = process.argv[3] || 'alba';
-const stake = +process.argv[4] || 0;
-
-function combos(arr, k, start = 0, cur = [], out = []) {
-  if (cur.length === k) { out.push(cur.slice()); return out; }
-  for (let i = start; i < arr.length; i++) { cur.push(arr[i]); combos(arr, k, i + 1, cur, out); cur.pop(); }
-  return out;
+// Bot que juega partidas completas sin gráficos: valida la simulación y mide la dificultad
+const L = require('./load')();
+const N = +process.argv[2] || 20, SKILL = +(process.argv[3] || 1);
+const DT = 1 / 60;
+function bot(w, st) {
+  if (SKILL >= 2) return bot2(w, st);
+  const p = w.p, I = w.input;
+  const live = w.enemies.filter((e) => e.spawn <= 0);
+  // esquivar balas cercanas con impulso
+  for (const b of w.bullets) if (L.dist(b.x, b.y, p.x, p.y) < 40 && SKILL > 0.5) I.dash = true;
+  if (!live.length) { I.tx = w.W / 2 + Math.cos(st.a) * 60; I.ty = w.H / 2 + Math.sin(st.a) * 60; st.a += DT * 4; return; }
+  // centro: la sombra más cercana (o el grupo)
+  let tgt = live[0], bd = 1e9;
+  for (const e of live) { const d = L.dist(e.x, e.y, p.x, p.y); if (d < bd) { bd = d; tgt = e; } }
+  let cx = 0, cy = 0, n = 0;
+  for (const e of live) if (L.dist(e.x, e.y, tgt.x, tgt.y) < 160) { cx += e.x; cy += e.y; n++; }
+  cx /= n; cy /= n;
+  if (st.cx == null) { st.cx = cx; st.cy = cy; }
+  st.cx += (cx - st.cx) * 0.05; st.cy += (cy - st.cy) * 0.05; cx = st.cx; cy = st.cy;
+  for (const e of live) if (L.dist(e.x, e.y, p.x, p.y) < e.r + 30 && SKILL > 0.5) I.dash = true;
+  const R = Math.max(120, tgt.r + 80) * (0.8 + 0.4 * (1 - SKILL));
+  st.a += DT * (p.st.speed / R) * 0.95;
+  I.tx = L.clamp(cx + Math.cos(st.a) * R, 20, w.W - 20); I.ty = L.clamp(cy + Math.sin(st.a) * R, 20, w.H - 20);
 }
-function estimate(g, ids) {
-  const p = g.previewHand(ids);
-  if (!p || p.blocked) return -1;
-  let chips = p.chips, mult = p.mult;
-  for (const id of p.scoring) { const c = g.card(id); if (c._debuffed) continue; chips += c.enh === 'piedra' ? 50 : BR.RANK_INFO[c.rank].chips + (c.bonus || 0); if (g.isTrump(c)) mult += 1; }
-  // talismanes de mano aproximados
-  let xm = 1;
-  for (const t of g.talismans) {
-    const d = BR.TAL_BY_ID[t.id];
-    if (d.hand) {
-      try {
-        const cards = ids.map((i) => g.card(i));
-        const ev = BR.evaluate(cards, g.handOpts());
-        const r = d.hand({ cards, scoring: ev.scoring, held: [], type: ev.type, contains: ev.contains, isFirst: g.r.handsPlayed === 0, isLast: g.r.handsLeft === 1 }, t, g) || {};
-        chips += r.chips || 0; mult += r.mult || 0; if (r.xmult) xm *= r.xmult;
-      } catch (e) {}
-    }
-  }
-  return chips * mult * xm;
+// estrategia de pastoreo: girar en grandes círculos; las sombras persiguen y quedan dentro
+function bot2(w, st) {
+  const p = w.p, I = w.input;
+  const live = w.enemies.filter((e) => e.spawn <= 0);
+  let cx = w.W / 2, cy = w.H / 2;
+  if (live.length) { let sx = 0, sy = 0; for (const e of live) { sx += e.x; sy += e.y; } cx = cx * 0.5 + (sx / live.length) * 0.5; cy = cy * 0.5 + (sy / live.length) * 0.5; }
+  if (st.cx == null) { st.cx = cx; st.cy = cy; }
+  st.cx += (cx - st.cx) * 0.02; st.cy += (cy - st.cy) * 0.02;
+  const R = Math.min(w.H, w.W) * (SKILL >= 3 ? 0.2 : 0.26);
+  const ang = Math.atan2(p.y - st.cy, p.x - st.cx) + 0.55;
+  I.tx = L.clamp(st.cx + Math.cos(ang) * R, 20, w.W - 20); I.ty = L.clamp(st.cy + Math.sin(ang) * R, 20, w.H - 20);
+  // esquivar
+  const vx = p.vx, vy = p.vy, m = Math.hypot(vx, vy) || 1;
+  for (const e of live) { const dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy); if (d < e.r + 34 && (dx * vx + dy * vy) / (d * m) > 0.3) I.dash = true; }
+  for (const b of w.bullets) if (L.dist(b.x, b.y, p.x, p.y) < 34) I.dash = true;
 }
-function bestPlay(g) {
-  const hand = g.hand.slice();
-  let best = null, bv = -2;
-  for (let k = 1; k <= Math.min(5, hand.length); k++) for (const c of combos(hand, k)) {
-    const v = estimate(g, c);
-    if (v > bv || (v === bv && c.length > best.length)) { bv = v; best = c; }
-  }
-  return { ids: best, v: bv };
-}
-
-function playRound(g) {
-  let guard = 0;
-  while (g.phase === 'round' && guard++ < 100) {
-    // usar consumibles sin selección
-    for (const k of g.consumables.slice()) {
-      const d = BR.consDef(k);
-      if (!d.sel && g.canUse(k, [])) { if (k.type === 'ani' && ['velo', 'duplicado', 'inmolacion'].includes(k.id)) continue; g.useConsumable(k.uid, []); }
-      else if (d.sel && k.type !== 'ani' && !['tijera', 'veleta', 'espejo'].includes(k.id)) { const ids = g.hand.slice(0, d.sel[1]); if (g.canUse(k, ids)) g.useConsumable(k.uid, ids); }
-    }
-    const need = g.r.target - g.r.score;
-    const bp = bestPlay(g);
-    if (bp.v * 1.0 < need / Math.max(1, g.r.handsLeft) && g.r.discardsLeft > 0 && g.r.handsLeft > 0) {
-      const keep = new Set(g.previewHand(bp.ids).scoring);
-      const disc = g.hand.filter((id) => !keep.has(id)).slice(-5);
-      if (disc.length) { g.discard(disc); continue; }
-    }
-    const res = g.playHand(bp.ids);
-    if (!res) throw new Error('play failed');
-    const out = g.finishPlay();
-    if (out.won) { g.endRound(); return true; }
-    if (out.lost) return false;
-  }
-  return g.phase !== 'over';
-}
-
-function shopBot(g) {
-  let guard = 0;
-  while (guard++ < 30) {
-    let did = false;
-    // voucher
-    if (g.shop.voucher && g.money >= g.itemCost(g.shop.voucher) + 5) { g.buy('voucher'); did = true; }
-    for (let i = 0; i < g.shop.items.length; i++) {
-      const it = g.shop.items[i]; if (!it) continue;
-      const cost = g.itemCost(it);
-      if (g.money < cost) continue;
-      if (it.kind === 'tal' && g.talismans.length < g.talSlots()) { g.buy('items', i); did = true; }
-      else if (it.kind === 'con' && g.consSpace() > 0) { g.buy('items', i); did = true; }
-    }
-    for (let i = 0; i < g.shop.packs.length; i++) {
-      const it = g.shop.packs[i]; if (!it) continue;
-      if (g.money >= g.itemCost(it) + 4) {
-        g.buy('packs', i); did = true; packBot(g);
-      }
-    }
-    // vender talismán más barato si lleno y hay rara en tienda
-    if (!did && g.money >= g.rerollCostNow() + 10 && g.talismans.length < g.talSlots()) { g.reroll(); did = true; }
-    if (!did) break;
-  }
-  // si los talismanes están llenos y los primeros son flojos, no hacer nada
-}
-function packBot(g) {
-  let guard = 0;
-  while (g.phase === 'pack' && guard++ < 10) {
-    const ch = g.pack.choices.filter(Boolean);
-    let done = false;
-    for (const c of ch) {
-      let ids = [];
-      if (c.kind === 'aug' || c.kind === 'ani') {
-        const d = BR.consDef({ type: c.kind, id: c.id });
-        if (d.sel) ids = g.pack.hand.slice(0, d.sel[1]);
-        if (c.kind === 'ani' && ['velo', 'duplicado', 'inmolacion', 'tijera'].includes(c.id)) continue;
-      }
-      const r = g.pickFromPack(c.key, ids);
-      if (r && !r.err) { done = true; break; }
-    }
-    if (!done) g.skipPack();
-  }
-}
-
-let wins = 0; const antes = {}; const errs = [];
+let wins = 0; const reach = {}; const errs = []; let loops = 0, rooms = 0;
 const t0 = Date.now();
-for (let i = 0; i < N; i++) {
-  const g = BR.Game.create({ deckId: deckArg, stake, seed: 'SIM' + i });
+for (let r = 0; r < N; r++) {
+  const w = new L.World({ seed: 'S' + r, W: 910, H: 570 });
+  const st = { a: 0 };
   try {
-    let guard = 0;
-    while (guard++ < 200) {
-      if (g.phase === 'blind') {
-        if (g.blindIdx < 2 && g.rng.chance(0.15)) { g.skipBlind(); if (g.openPendingPack('blind')) packBot(g); continue; }
-        g.selectBlind();
-        // save/load round-trip
-        const s = JSON.stringify(g.save()); const g2 = BR.Game.load(JSON.parse(s));
-        if (g2.hand.length !== g.hand.length) throw new Error('save mismatch');
-      } else if (g.phase === 'round') { playRound(g); }
-      else if (g.phase === 'cashout') { const r = g.cashOut(); if (r === 'victory') break; }
-      else if (g.phase === 'shop') { shopBot(g); g.advanceAfterShop(); }
-      else if (g.phase === 'pack') packBot(g);
-      else if (g.phase === 'over') break;
+    let guard = 0, done = false;
+    while (!done && guard++ < 200) {
+      const av = w.available();
+      const nodeId = av[Math.floor(w.rng.next() * av.length)];
+      const node = w.choose(nodeId);
+      if (['combat', 'elite', 'boss'].includes(node.type)) {
+        w.startRoom(node.type);
+        let t = 0;
+        while (w.phase === 'room' && t < 240) {
+          bot(w, st); w.update(DT); t += DT;
+          for (const ev of w.events) { if (ev.t === 'roomDone') w.phase = 'reward'; }
+          w.events.length = 0;
+        }
+        rooms++;
+        if (w.phase === 'dead') { done = true; break; }
+        if (t >= 240) { errs.push('room timeout ' + node.type + ' floor ' + w.floor + ' enemies ' + w.enemies.length); w.phase = 'reward'; }
+        const ch = w.donChoices(node.type === 'combat' ? 'combat' : node.type);
+        w.addDon(ch[0].id);
+        if (node.type === 'boss') { if (w.floor === 2) { wins++; done = true; break; } w.nextFloor(); }
+      } else if (node.type === 'treasure') { w.addDon(w.donChoices('treasure')[0].id); }
+      else if (node.type === 'fountain') { w.heal(99); }
+      else if (node.type === 'shop') { if (w.polen >= 60) { w.polen -= 60; w.addDon(w.randomDon(1, 3).id); } }
+      else if (node.type === 'event') { const E = L.EVENTS[Math.floor(w.rng.next() * L.EVENTS.length)]; const ops = E.opts.filter((o) => (!o.can || o.can(w)) && (!o.cost || w.polen >= o.cost)); ops[0].run(w); if (w.pendingChoice) { w.addDon(w.randomDon(w.pendingChoice.rarityMin).id); w.pendingChoice = null; } }
+      w.phase = 'map';
     }
-    if (g.won) wins++;
-    antes[g.ante] = (antes[g.ante] || 0) + 1;
+    loops += w.stats.loops;
+    const k = w.floor + ':' + (w.pos != null ? w.map.nodes[w.pos].l : 0);
+    reach[w.floor] = (reach[w.floor] || 0) + 1;
   } catch (e) { errs.push(e.stack); }
 }
-console.log(`deck=${deckArg} stake=${stake} runs=${N} wins=${wins} (${(100 * wins / N).toFixed(1)}%) time=${Date.now() - t0}ms`);
-console.log('ante final:', antes);
-if (errs.length) { console.log('ERRORS', errs.length); console.log(errs.slice(0, 3).join('\n\n')); }
+console.log(`runs=${N} skill=${SKILL} wins=${wins} floorsReached=${JSON.stringify(reach)} loops/run=${(loops / N).toFixed(0)} rooms=${rooms} ${(Date.now() - t0) / 1000}s`);
+if (errs.length) console.log(errs.slice(0, 5).join('\n'));

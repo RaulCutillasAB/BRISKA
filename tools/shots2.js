@@ -1,78 +1,49 @@
-// Capturas de pantallas secundarias forzando estados
+// Capturas de estados concretos: jefes, biomas, mercado, evento, selección, móvil
 const { chromium } = require('playwright');
 const path = require('path');
 const OUT = process.env.OUT || '/tmp/shots';
 (async () => {
-  const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
-  const W = +process.env.W || 1440, H = +process.env.H || 900;
-  const page = await browser.newPage({ viewport: { width: W, height: H } });
+  const W = +process.env.W || 1440, H = +process.env.H || 900, T = process.env.TAG || 's';
+  const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+  const page = await browser.newPage({ viewport: { width: W, height: H }, hasTouch: !!process.env.TOUCH });
   const errs = [];
-  page.on('pageerror', (e) => errs.push('PAGEERROR: ' + e.message + '\n' + e.stack));
+  page.on('pageerror', (e) => errs.push('PAGEERROR ' + e.message + '\n' + e.stack));
   await page.goto('file://' + path.resolve(__dirname, '../index.html'));
-  await page.evaluate(() => { BR.Meta.data.tutorial = true; BR.Meta.data.settings.speed = 4; BR.Meta.save(); });
-  await page.waitForTimeout(800);
-  const T = process.env.TAG || 's';
-  await page.click('[data-a=new]'); await page.click('#go'); await page.waitForTimeout(500);
-  // preparar estado rico
-  await page.evaluate(() => {
-    const g = BR.game; g.money = 87;
-    for (const id of ['reflejo', 'cuarenta', 'triunfo', 'sieteymedio', 'coloso']) g.addTalisman(g.newTalisman(id));
-    g.talismans[1].ed = 'aurora'; g.talismans[4].ed = 'iridiscente'; g.talismans[2].ed = 'brillante';
-    g.addConsumable({ type: 'con', id: 'pareja' }); g.addConsumable({ type: 'aug', id: 'vidriero' });
-    g.deck[0].enh = 'cristal'; g.deck[1].enh = 'oro'; g.deck[2].seal = 'carmesi'; g.deck[3].ed = 'aurora'; g.deck[4].enh = 'piedra'; g.deck[5].enh = 'fortuna'; g.deck[6].enh = 'rubi'; g.deck[7].enh = 'prisma'; g.deck[8].seal = 'dorado'; g.deck[9].ed = 'brillante';
-    g.blindIdx = 2; g.bossId = 'reina';
-  });
-  await page.evaluate(() => { BR.UI && 0; });
-  await page.keyboard.press('r');
-  await page.evaluate(() => { document.getElementById('blindsel')._sig = null; });
-  await page.mouse.move(5, 5);
-  await page.waitForTimeout(300);
-  // forzar re-render
-  await page.evaluate(() => window.dispatchEvent(new Event('resize')));
-  await page.waitForTimeout(400);
-  await page.screenshot({ path: `${OUT}/${T}-a-bossselect.png` });
-  await page.click('[data-act=select]'); await page.waitForTimeout(1600);
-  await page.screenshot({ path: `${OUT}/${T}-b-bossround.png` });
-  // jugar Caballo+Rey si hay
-  await page.evaluate(() => { const g = BR.game; const c = g.makeCard(g.r.trump, 11), r = g.makeCard(g.r.trump, 12); g.deck.push(c, r); g._cardIndex = null; g.hand.splice(0, 2, c.id, r.id); });
-  await page.evaluate(() => window.dispatchEvent(new Event('resize')));
-  await page.waitForTimeout(400);
-  const ids = await page.evaluate(() => BR.game.hand.slice(0, 2));
-  for (const id of ids) await page.click(`.sp[data-key="${id}"]`, { force: true });
-  await page.click('#btn-play', { force: true });
-  await page.waitForTimeout(900);
-  await page.screenshot({ path: `${OUT}/${T}-c-cuarenta.png` });
-  await page.waitForTimeout(1200);
-  await page.screenshot({ path: `${OUT}/${T}-d-scoring2.png` });
-  await page.waitForFunction(() => !BR.uiBusy, null, { timeout: 30000 });
-  // abrir sobre de augurios
-  await page.evaluate(() => { const g = BR.game; g.phase = 'shop'; g.r = null; g.enterShop(); g.openPack('aug', 'jumbo', 'shop'); });
-  await page.evaluate(() => window.dispatchEvent(new Event('resize')));
-  await page.waitForTimeout(800);
-  await page.screenshot({ path: `${OUT}/${T}-e-pack.png` });
-  await page.evaluate(() => { const g = BR.game; g.pack = null; g.openPack('tal', 'mega', 'shop'); });
-  await page.evaluate(() => window.dispatchEvent(new Event('resize')));
-  await page.waitForTimeout(800);
-  await page.screenshot({ path: `${OUT}/${T}-f-packtal.png` });
-  await page.evaluate(() => { BR.game.phase = 'shop'; BR.game.pack = null; });
-  await page.click('#btn-info'); await page.waitForTimeout(500);
-  await page.screenshot({ path: `${OUT}/${T}-g-info.png` });
-  await page.keyboard.press('Escape');
-  await page.click('#btn-options'); await page.waitForTimeout(400);
-  await page.screenshot({ path: `${OUT}/${T}-h-options.png` });
-  await page.keyboard.press('Escape');
-  // fin de partida
-  await page.evaluate(() => { BR.Screens.endScreen(BR.game, false, [{ text: '¡Nueva baraja desbloqueada: Baraja del Mar!' }], () => {}); });
+  await page.evaluate(() => { LAZO.Meta.d.tutorial = true; });
   await page.waitForTimeout(500);
-  await page.screenshot({ path: `${OUT}/${T}-i-over.png` });
-  await page.evaluate(() => { BR.Meta.discover(BR.TALISMANS.slice(0, 40).map((t) => 'tal:' + t.id)); BR.Screens.grimoire(); });
-  await page.waitForTimeout(500);
-  await page.screenshot({ path: `${OUT}/${T}-j-grim.png` });
-  await page.evaluate(() => { BR.Meta.discover(BR.AUGURIOS.map((t) => 'aug:' + t.id).concat(BR.CONSTS.map((t) => 'con:' + t.id))); });
-  await page.click('.tab[data-t=con]'); await page.waitForTimeout(300);
-  await page.screenshot({ path: `${OUT}/${T}-k-grimcon.png` });
-  await page.click('.tab[data-t=aug]'); await page.waitForTimeout(300);
-  await page.screenshot({ path: `${OUT}/${T}-l-grimaug.png` });
+  await page.click('[data-a=new]'); await page.waitForTimeout(300);
+  await page.screenshot({ path: `${OUT}/${T}-chars.png` });
+  await page.click('[data-a=go]'); await page.waitForTimeout(400);
+  const room = async (floor, type, name, extra) => {
+    await page.evaluate(([f, ty, ex]) => {
+      const w = LAZO.w; w.floor = f; w.genMap();
+      for (const id of ['ardiente', 'hermana', 'petalo', 'flor']) if (ex) w.addDon(id);
+      const n = w.map.nodes.find((x) => x.type === ty) || w.map.nodes[0]; w.pos = null; n.type = ty;
+      w.map.nodes.filter((x) => x.l === 0)[0].type = ty;
+      LAZO.enterNode(w.map.nodes.filter((x) => x.l === 0)[0].id);
+    }, [floor, type, extra]);
+    const t0 = Date.now(); let a = 0;
+    while (Date.now() - t0 < 6500) {
+      const st = await page.evaluate(() => { const w = LAZO.w; return { x: w.p.x, y: w.p.y, S: innerWidth / w.W, W: w.W, H: w.H }; });
+      a += 0.3; await page.mouse.move((st.W / 2 + Math.cos(a) * st.H * 0.25) * st.S, (st.H / 2 + Math.sin(a) * st.H * 0.25) * st.S);
+      await page.waitForTimeout(40);
+    }
+    await page.screenshot({ path: `${OUT}/${T}-${name}.png` });
+    await page.evaluate(() => { const w = LAZO.w; w.phase = 'map'; });
+  };
+  await room(0, 'boss', 'boss1', false);
+  await room(1, 'combat', 'pantano', true);
+  await room(1, 'boss', 'boss2', true);
+  await room(2, 'combat', 'eclipse', true);
+  await room(2, 'boss', 'boss3', true);
+  // mercado y evento
+  await page.evaluate(() => { const w = LAZO.w; w.polen = 120; w.phase = 'map'; const n = w.map.nodes.filter((x) => x.l === 0)[0]; n.type = 'shop'; w.pos = null; LAZO.enterNode(n.id); });
+  await page.waitForTimeout(500); await page.screenshot({ path: `${OUT}/${T}-shop.png` });
+  await page.evaluate(() => { const w = LAZO.w; const n = w.map.nodes.filter((x) => x.l === 0)[0]; n.type = 'event'; w.pos = null; LAZO.enterNode(n.id); });
+  await page.waitForTimeout(500); await page.screenshot({ path: `${OUT}/${T}-event.png` });
+  await page.evaluate(() => { const w = LAZO.w; w.genMap(); w.choose(w.available()[0]); w.choose(w.available()[0]); });
+  await page.click('.opt'); await page.waitForTimeout(300); await page.click('[data-a=ok]').catch(() => {}); await page.waitForTimeout(500);
+  await page.screenshot({ path: `${OUT}/${T}-map2.png` });
   console.log(errs.join('\n') || 'no errors');
   await browser.close();
 })();

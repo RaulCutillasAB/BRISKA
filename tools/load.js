@@ -1,13 +1,2 @@
-// Carga los módulos del núcleo en Node (sin DOM)
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
-const FILES = ['rng', 'data', 'hands', 'talismans', 'consumables', 'scoring', 'game'];
-module.exports = function load() {
-  globalThis.BR = {};
-  for (const f of FILES) {
-    const code = fs.readFileSync(path.join(__dirname, '..', 'js', 'core', f + '.js'), 'utf8');
-    vm.runInThisContext(code, { filename: f + '.js' });
-  }
-  return globalThis.BR;
-};
+const fs = require('fs'), path = require('path'), vm = require('vm');
+module.exports = function () { globalThis.L = {}; for (const f of ['util', 'data', 'game', 'run']) { const p = path.join(__dirname, '..', 'js', f + '.js'); if (fs.existsSync(p)) vm.runInThisContext(fs.readFileSync(p, 'utf8'), { filename: f + '.js' }); } return globalThis.L; };

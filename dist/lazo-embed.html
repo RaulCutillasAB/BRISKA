@@ -1,0 +1,2555 @@
+<meta name="theme-color" content="#071a1a">
+<title>Lazo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #f4f1ff; --muted: #a9a6c8; --gold: #ffd76a; --pink: #ff8ac8; --sky: #8fd8ff; --mint: #9cffc8; --red: #ff6a8a;
+  --panel: rgba(16, 14, 38, .82); --panel2: rgba(30, 26, 64, .86); --line: rgba(255, 255, 255, .12); --glow: rgba(255, 215, 106, .35);
+  --r: 18px; --ease: cubic-bezier(.2, .9, .25, 1.15);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #050812; color: var(--ink); font-family: 'Fredoka', system-ui, sans-serif; user-select: none; -webkit-user-select: none; touch-action: none; }
+canvas#cv { position: fixed; inset: 0; display: block; }
+button { font-family: inherit; color: inherit; }
+.hidden { display: none !important; }
+.ico { display: block; width: 100%; height: 100%; }
+
+/* ---------- HUD ---------- */
+#hud { position: fixed; inset: 0; pointer-events: none; padding: max(12px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) 0 max(14px, env(safe-area-inset-left)); display: flex; justify-content: space-between; align-items: flex-start; z-index: 10; }
+#hud-left { display: flex; flex-direction: column; gap: 8px; }
+#hearts { display: flex; gap: 4px; flex-wrap: wrap; max-width: 260px; }
+.hrt { width: 28px; height: 28px; color: var(--red); filter: drop-shadow(0 0 6px rgba(255, 90, 130, .7)); transition: transform .2s var(--ease); }
+.hrt.empty { color: rgba(255, 255, 255, .18); filter: none; }
+.hrt.shield { color: #ffb0e0; }
+.hrt.pop { animation: hpop .4s var(--ease); }
+@keyframes hpop { 40% { transform: scale(1.5) rotate(-10deg); } }
+#dash { position: relative; width: 112px; height: 14px; border-radius: 8px; background: rgba(255, 255, 255, .08); overflow: hidden; border: 1px solid var(--line); }
+#dash-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #8fd8ff, #fff); border-radius: 8px; }
+#dash span { position: absolute; inset: 0; font-size: 10px; text-align: center; line-height: 13px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: #0b1430; mix-blend-mode: normal; opacity: .7; }
+#dash.ready #dash-fill { box-shadow: 0 0 12px #8fd8ff; }
+#hud-center { position: absolute; left: 50%; top: max(12px, env(safe-area-inset-top)); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; width: min(460px, 60vw); }
+#room-label { font-size: 14px; font-weight: 600; color: var(--muted); letter-spacing: .06em; text-align: center; text-shadow: 0 2px 6px rgba(0, 0, 0, .6); }
+#bossbar { width: 100%; text-align: center; }
+#boss-name { font-weight: 700; font-size: 17px; color: #ffd0e6; text-shadow: 0 0 12px rgba(255, 90, 160, .7); margin-bottom: 4px; }
+.bb { height: 12px; border-radius: 8px; background: rgba(0, 0, 0, .45); border: 1px solid rgba(255, 150, 200, .4); overflow: hidden; }
+#boss-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #ff5aa0, #ffb36a); transition: width .25s; box-shadow: 0 0 14px #ff5aa0; }
+#hud-right { display: flex; gap: 10px; align-items: center; pointer-events: auto; }
+#polen { display: flex; align-items: center; gap: 8px; background: rgba(0, 0, 0, .35); padding: 6px 14px 6px 10px; border-radius: 20px; border: 1px solid rgba(255, 215, 106, .3); font-size: 20px; }
+#polen b { color: var(--gold); text-shadow: 0 0 10px rgba(255, 200, 80, .6); min-width: 30px; }
+.pdot { width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle, #fff6c8, #ffc850 50%, rgba(255, 190, 60, 0) 72%); box-shadow: 0 0 10px #ffc850; display: inline-block; }
+#polen.bump b { animation: hpop .3s; display: inline-block; }
+.iconbtn { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: rgba(0, 0, 0, .35); padding: 9px; cursor: pointer; color: var(--ink); }
+.iconbtn:hover { background: rgba(255, 255, 255, .12); }
+#touch-dash { position: fixed; right: max(18px, env(safe-area-inset-right)); bottom: max(22px, env(safe-area-inset-bottom)); width: 78px; height: 78px; border-radius: 50%; border: 2px solid rgba(143, 216, 255, .6); background: radial-gradient(circle at 40% 35%, rgba(143, 216, 255, .35), rgba(20, 30, 60, .55)); z-index: 12; color: #dff4ff; padding: 18px; font-weight: 700; }
+#touch-dash.cd { opacity: .4; }
+#hint { position: fixed; left: 50%; bottom: max(26px, env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 11; pointer-events: none; text-align: center; font-size: 18px; font-weight: 500; color: #fff; text-shadow: 0 2px 8px rgba(0, 0, 0, .8); opacity: 0; transition: opacity .5s; max-width: 90vw; }
+#hint.show { opacity: 1; }
+#hint small { display: block; font-size: 14px; color: var(--muted); }
+
+/* ---------- pantallas ---------- */
+#screen { position: fixed; inset: 0; z-index: 20; display: none; align-items: center; justify-content: center; padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); overflow-y: auto; }
+#screen.show { display: flex; animation: fade .35s; }
+#screen.dim { background: rgba(4, 6, 16, .62); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+@keyframes fade { from { opacity: 0; } }
+.box { width: min(760px, 100%); margin: auto; background: linear-gradient(180deg, var(--panel2), var(--panel)); border: 1px solid var(--line); border-radius: 26px; padding: 26px; box-shadow: 0 30px 80px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .08); animation: rise .5s var(--ease); position: relative; }
+@keyframes rise { from { transform: translateY(40px) scale(.96); opacity: 0; } }
+h1, h2, h3 { margin: 0; font-weight: 700; }
+.box h2 { text-align: center; font-size: 30px; }
+.sub { text-align: center; color: var(--muted); margin: 6px 0 18px; font-size: 16px; }
+.row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+.btn { appearance: none; border: 0; cursor: pointer; font-weight: 600; font-size: 18px; padding: 14px 26px; border-radius: 16px; color: #1a1030; background: linear-gradient(180deg, #ffe7a0, #ffc24a); box-shadow: 0 5px 0 #b97c1c, 0 10px 24px rgba(255, 190, 70, .25); transition: transform .08s, filter .15s, box-shadow .08s; }
+.btn:hover { filter: brightness(1.08); }
+.btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #b97c1c; }
+.btn.alt { color: var(--ink); background: linear-gradient(180deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, .07)); box-shadow: 0 5px 0 rgba(0, 0, 0, .35); border: 1px solid var(--line); }
+.btn.pink { background: linear-gradient(180deg, #ffb6e0, #ff6aa8); box-shadow: 0 5px 0 #a8306a, 0 10px 24px rgba(255, 100, 170, .25); }
+.btn.sky { background: linear-gradient(180deg, #c8f0ff, #6ac8ff); box-shadow: 0 5px 0 #2a6aa8, 0 10px 24px rgba(100, 190, 255, .25); }
+.btn.small { font-size: 15px; padding: 10px 18px; border-radius: 12px; }
+.btn:disabled { opacity: .4; cursor: default; filter: grayscale(.5); transform: none; }
+.btn .c { display: inline-flex; align-items: center; gap: 6px; }
+
+/* menú */
+.menu { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; animation: fade 1s; }
+.title { font-size: clamp(76px, 17vw, 168px); font-weight: 700; line-height: .9; letter-spacing: .02em; background: linear-gradient(180deg, #fffbe6 10%, #ffe08a 45%, #ff9ac8 90%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 30px rgba(255, 210, 120, .45)) drop-shadow(0 6px 0 rgba(60, 20, 60, .5)); animation: float 5s ease-in-out infinite; }
+@keyframes float { 50% { transform: translateY(-8px); } }
+.tagline { font-size: clamp(16px, 2.5vw, 22px); color: #d8d4f4; margin-top: -4px; }
+.menu .btns { display: flex; flex-direction: column; gap: 12px; margin-top: 22px; width: min(320px, 82vw); }
+.menu .btns .btn { width: 100%; }
+.foot { position: fixed; bottom: 10px; left: 0; right: 0; text-align: center; font-size: 12px; color: rgba(220, 215, 255, .4); pointer-events: none; }
+
+/* luciérnagas */
+.chars { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
+.char { border-radius: 18px; border: 2px solid var(--line); background: rgba(255, 255, 255, .04); padding: 14px 10px; text-align: center; cursor: pointer; transition: transform .2s var(--ease), border-color .2s; position: relative; }
+.char:hover { transform: translateY(-4px); }
+.char.on { border-color: var(--cc); box-shadow: 0 0 24px color-mix(in srgb, var(--cc) 40%, transparent); }
+.char.locked { opacity: .45; cursor: not-allowed; }
+.char .fly { width: 64px; height: 64px; margin: 0 auto 8px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle, color-mix(in srgb, var(--cc) 75%, white) 0%, var(--cc) 30%, transparent 70%); color: #1a1030; padding: 10px; animation: float 3s ease-in-out infinite; }
+.char.locked .fly { background: rgba(255, 255, 255, .08); color: var(--muted); }
+.char b { font-size: 18px; display: block; }
+.chardesc { margin-top: 14px; text-align: center; min-height: 48px; color: #e8e4ff; font-size: 16px; }
+.moons { display: flex; gap: 8px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+.moon { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--line); cursor: pointer; background: radial-gradient(circle at 35% 35%, #fffbe6, #c8c0e8 60%, #6a6488); position: relative; overflow: hidden; }
+.moon::after { content: ''; position: absolute; inset: 0; background: #0b0a22; border-radius: 50%; transform: translateX(var(--mx)); }
+.moon.on { border-color: var(--gold); box-shadow: 0 0 16px var(--glow); }
+.moon.locked { opacity: .3; cursor: not-allowed; }
+.moondesc { text-align: center; color: var(--muted); margin-top: 8px; min-height: 22px; }
+
+/* mapa */
+.mapwrap { width: min(560px, 100%); margin: auto; display: flex; flex-direction: column; gap: 10px; }
+.maphead { text-align: center; }
+.maphead h2 { font-size: 28px; }
+.maphead .sub { margin: 2px 0 0; }
+.mapsvg { width: 100%; height: auto; max-height: calc(100vh - 230px); max-height: calc(100dvh - 230px); display: block; margin: 0 auto; }
+.mapnode { cursor: pointer; }
+.mapnode .halo { opacity: 0; }
+.mapnode.avail .halo { opacity: 1; animation: pulse 1.6s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+@keyframes pulse { 50% { transform: scale(1.25); opacity: .4; } }
+.mapnode.dimmed { opacity: .35; cursor: default; }
+.mapnode.done { opacity: .55; cursor: default; }
+.runbar { display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; background: rgba(0, 0, 0, .3); border: 1px solid var(--line); border-radius: 16px; padding: 8px 12px; }
+.runbar .hs { display: flex; gap: 2px; }
+.runbar .hs .hrt { width: 20px; height: 20px; }
+.donrow { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; }
+.dmini { width: 30px; height: 30px; border-radius: 9px; padding: 5px; background: rgba(255, 255, 255, .07); border: 1px solid var(--rc, var(--line)); color: var(--rc); position: relative; cursor: help; }
+.dmini i { position: absolute; right: -4px; bottom: -4px; font-style: normal; font-size: 10px; background: #000; border-radius: 6px; padding: 0 3px; color: #fff; }
+
+/* cartas de don */
+.cards { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+.card { width: 200px; min-height: 260px; border-radius: 22px; padding: 18px 16px; text-align: center; cursor: pointer; position: relative; background: linear-gradient(180deg, rgba(255, 255, 255, .1), rgba(255, 255, 255, .03)); border: 2px solid var(--rc); box-shadow: 0 0 0 1px rgba(0, 0, 0, .3), 0 14px 30px rgba(0, 0, 0, .4), inset 0 0 40px color-mix(in srgb, var(--rc) 15%, transparent); transition: transform .25s var(--ease), box-shadow .25s; animation: dealin .5s var(--ease) backwards; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.card:nth-child(2) { animation-delay: .08s; } .card:nth-child(3) { animation-delay: .16s; } .card:nth-child(4) { animation-delay: .24s; }
+@keyframes dealin { from { transform: translateY(60px) rotate(-6deg); opacity: 0; } }
+.card:hover { transform: translateY(-8px) scale(1.03); box-shadow: 0 0 30px color-mix(in srgb, var(--rc) 50%, transparent), 0 20px 40px rgba(0, 0, 0, .5); }
+.card .ic { width: 82px; height: 82px; border-radius: 50%; padding: 18px; color: #fff; background: radial-gradient(circle, color-mix(in srgb, var(--rc) 60%, transparent), transparent 70%); filter: drop-shadow(0 0 10px var(--rc)); }
+.card h3 { font-size: 20px; }
+.card .rar { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--rc); font-weight: 600; }
+.card p { margin: 0; font-size: 15px; color: #e4e0fa; line-height: 1.35; }
+.card .own { position: absolute; top: 10px; right: 12px; font-size: 12px; color: var(--muted); }
+.card .price { margin-top: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 18px; font-weight: 700; color: var(--gold); background: rgba(0, 0, 0, .35); padding: 4px 12px; border-radius: 12px; }
+.card.cant { opacity: .5; }
+.card.sold { opacity: .25; pointer-events: none; }
+
+/* evento */
+.event .eic { width: 96px; height: 96px; margin: 0 auto 10px; color: #e8d8ff; padding: 18px; border-radius: 50%; background: radial-gradient(circle, rgba(200, 160, 255, .35), transparent 70%); }
+.event p.txt { text-align: center; font-size: 18px; line-height: 1.45; color: #ece8ff; margin: 8px auto 18px; max-width: 520px; }
+.opts { display: flex; flex-direction: column; gap: 10px; }
+.opt { text-align: left; border-radius: 16px; padding: 14px 16px; cursor: pointer; background: rgba(255, 255, 255, .06); border: 1px solid var(--line); transition: background .2s, transform .15s; }
+.opt:hover { background: rgba(255, 255, 255, .12); transform: translateX(4px); }
+.opt b { font-size: 18px; }
+.opt span { display: block; color: var(--muted); font-size: 14px; margin-top: 2px; }
+.opt.no { opacity: .4; pointer-events: none; }
+
+/* fin */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 10px; }
+.stat { background: rgba(0, 0, 0, .3); border: 1px solid var(--line); border-radius: 14px; padding: 10px; text-align: center; }
+.stat b { display: block; font-size: 24px; color: var(--gold); }
+.stat span { font-size: 13px; color: var(--muted); }
+
+/* códice */
+.tabs { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-bottom: 14px; }
+.tab { padding: 8px 14px; border-radius: 12px; background: rgba(255, 255, 255, .06); border: 1px solid var(--line); cursor: pointer; font-weight: 600; color: var(--muted); }
+.tab.on { background: var(--gold); color: #1a1030; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; max-height: 60vh; overflow: auto; padding: 4px; }
+.gi { border-radius: 14px; padding: 10px; background: rgba(255, 255, 255, .05); border: 1px solid var(--line); display: flex; gap: 10px; align-items: center; font-size: 14px; }
+.gi .gic { width: 38px; height: 38px; flex: none; color: var(--rc, var(--ink)); padding: 6px; border-radius: 10px; background: rgba(255, 255, 255, .06); }
+.gi.unk { opacity: .35; }
+.gi small { display: block; color: var(--muted); font-size: 12px; line-height: 1.25; }
+.optrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 2px; border-bottom: 1px solid var(--line); }
+.seg { display: flex; gap: 4px; }
+.seg button { border: 1px solid var(--line); background: rgba(255, 255, 255, .06); padding: 6px 12px; border-radius: 10px; cursor: pointer; font-weight: 600; }
+.seg button.on { background: var(--gold); color: #1a1030; }
+input[type=range] { accent-color: var(--gold); width: 160px; }
+.howto p { font-size: 17px; line-height: 1.5; color: #ece8ff; }
+.howto .demo { display: flex; justify-content: center; margin: 8px 0; }
+
+#tip { position: fixed; z-index: 40; pointer-events: none; max-width: 260px; background: rgba(14, 12, 34, .96); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: 14px; opacity: 0; transition: opacity .12s; }
+#tip.show { opacity: 1; }
+#tip b { display: block; font-size: 16px; margin-bottom: 2px; }
+#toasts { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 50; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
+.toast { background: rgba(20, 16, 44, .95); border: 1px solid rgba(255, 215, 106, .5); color: var(--gold); padding: 10px 18px; border-radius: 14px; font-weight: 600; box-shadow: 0 10px 30px rgba(0, 0, 0, .5), 0 0 24px rgba(255, 215, 106, .25); animation: toast 3.4s var(--ease) forwards; text-align: center; }
+@keyframes toast { 0% { transform: translateY(-20px); opacity: 0; } 10% { transform: none; opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; } }
+.big-banner { position: fixed; left: 0; right: 0; top: 38%; text-align: center; z-index: 15; pointer-events: none; animation: banner 2.2s var(--ease) forwards; }
+.big-banner b { font-size: clamp(36px, 7vw, 72px); display: block; color: #fff; text-shadow: 0 0 30px var(--bc, #ffd76a), 0 4px 0 rgba(0, 0, 0, .4); }
+.big-banner span { font-size: clamp(16px, 2.4vw, 22px); color: #e8e4ff; text-shadow: 0 2px 8px #000; }
+@keyframes banner { 0% { transform: scale(.6); opacity: 0; } 15% { transform: scale(1.06); opacity: 1; } 25% { transform: scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translateY(-20px); } }
+
+@media (max-width: 640px) {
+  .box { padding: 18px 14px; border-radius: 20px; }
+  .box h2 { font-size: 24px; }
+  .card { width: 100%; min-height: 0; flex-direction: row; text-align: left; padding: 12px; gap: 12px; }
+  .card .ic { width: 60px; height: 60px; padding: 12px; flex: none; }
+  .card .txt { flex: 1; }
+  .card .price { margin-top: 6px; }
+  .hrt { width: 22px; height: 22px; }
+  #room-label { font-size: 12px; }
+  #polen { font-size: 16px; padding: 4px 10px 4px 8px; }
+  .iconbtn { width: 34px; height: 34px; padding: 7px; }
+  #hint { bottom: 120px; font-size: 16px; }
+  #hud-center { top: max(14px, env(safe-area-inset-top)); width: 40vw; }
+}
+@media (prefers-reduced-motion: reduce) { .title, .char .fly { animation: none; } }
+
+</style>
+<canvas id="cv"></canvas>
+<div id="hud" class="hidden">
+  <div id="hud-left"><div id="hearts"></div><div id="dash"><div id="dash-fill"></div><span>Impulso</span></div></div>
+  <div id="hud-center"><div id="room-label"></div><div id="bossbar" class="hidden"><div id="boss-name"></div><div class="bb"><div id="boss-fill"></div></div></div></div>
+  <div id="hud-right"><div id="polen"><span class="pdot"></span><b id="polen-v">0</b></div><button id="btn-pause" class="iconbtn" aria-label="Pausa"></button></div>
+</div>
+<div id="hint"></div>
+<button id="touch-dash" class="hidden" aria-label="Impulso"></button>
+<div id="screen"></div>
+<div id="tip"></div>
+<div id="toasts"></div>
+<script>
+/* LAZO — utilidades: azar con semilla, matemáticas y geometría */
+(function (L) {
+  'use strict';
+  class RNG {
+    constructor(seed) { this.s = (seed >>> 0) || 1; }
+    next() { let t = (this.s = (this.s + 0x6d2b79f5) >>> 0); t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }
+    range(a, b) { return a + this.next() * (b - a); }
+    int(a, b) { return a + Math.floor(this.next() * (b - a + 1)); }
+    pick(a) { return a[Math.floor(this.next() * a.length)]; }
+    chance(p) { return this.next() < p; }
+    shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(this.next() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+    weighted(list, w) { let t = 0; for (const x of list) t += w(x); let r = this.next() * t; for (const x of list) { r -= w(x); if (r <= 0) return x; } return list[list.length - 1]; }
+  }
+  L.RNG = RNG;
+  L.hash = (str) => { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
+  L.clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+  L.lerp = (a, b, t) => a + (b - a) * t;
+  L.dist = (ax, ay, bx, by) => Math.hypot(bx - ax, by - ay);
+  L.ease = (t) => 1 - Math.pow(1 - t, 3);
+
+  // intersección de segmentos p1p2 y p3p4; devuelve {x,y,t,u} o null
+  L.segX = function (x1, y1, x2, y2, x3, y3, x4, y4) {
+    const d = (x2 - x1) * (y4 - y3) - (y2 - y1) * (x4 - x3);
+    if (Math.abs(d) < 1e-9) return null;
+    const t = ((x3 - x1) * (y4 - y3) - (y3 - y1) * (x4 - x3)) / d;
+    const u = ((x3 - x1) * (y2 - y1) - (y3 - y1) * (x2 - x1)) / d;
+    if (t < 0 || t > 1 || u < 0 || u > 1) return null;
+    return { x: x1 + t * (x2 - x1), y: y1 + t * (y2 - y1), t, u };
+  };
+  L.inPoly = function (x, y, poly) {
+    let ins = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const a = poly[i], b = poly[j];
+      if ((a.y > y) !== (b.y > y) && x < ((b.x - a.x) * (y - a.y)) / (b.y - a.y) + a.x) ins = !ins;
+    }
+    return ins;
+  };
+  L.polyArea = function (poly) { let s = 0; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) s += (poly[j].x + poly[i].x) * (poly[j].y - poly[i].y); return Math.abs(s / 2); };
+  L.polyCenter = function (poly) { let x = 0, y = 0; for (const p of poly) { x += p.x; y += p.y; } return { x: x / poly.length, y: y / poly.length }; };
+  // distancia de un punto a un segmento
+  L.segDist = function (px, py, x1, y1, x2, y2) {
+    const dx = x2 - x1, dy = y2 - y1, l = dx * dx + dy * dy;
+    let t = l ? ((px - x1) * dx + (py - y1) * dy) / l : 0;
+    t = L.clamp(t, 0, 1);
+    return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+  };
+  L.fmt = (n) => Math.floor(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  L.seedStr = () => { const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s = ''; for (let i = 0; i < 6; i++) s += c[Math.floor(Math.random() * c.length)]; return s; };
+})(globalThis.L = globalThis.L || {});
+
+</script>
+<script>
+/* LAZO — datos: personajes, biomas, sombras, dones y eventos */
+(function (L) {
+  'use strict';
+
+  L.BASE = { speed: 360, trailLen: 1050, loopDmg: 1, magnet: 75, dashCd: 2.2, dashDur: 0.18, dashSpeed: 1150, maxHearts: 4, inv: 1.4, polenMul: 1 };
+
+  L.CHARS = [
+    { id: 'lumi', name: 'Lumi', color: '#ffd76a', glow: '#ffb340', desc: 'Una luciérnaga valiente. Equilibrada en todo.', unlock: null },
+    { id: 'chispa', name: 'Chispa', color: '#c6ff6a', glow: '#7dff3a', desc: 'Muy rápida e impulso cada segundo, pero con estela corta.', unlock: { id: 'pantano', text: 'Llega al Pantano de Niebla' },
+      stats: (s) => { s.speed *= 1.25; s.dashCd = 1.0; s.trailLen *= 0.72; } },
+    { id: 'nimbo', name: 'Nimbo', color: '#93dcff', glow: '#4ab8ff', desc: 'Estela enorme y serena, aunque algo lenta.', unlock: { id: 'seis', text: 'Atrapa 6 sombras en un solo lazo' },
+      stats: (s) => { s.trailLen *= 1.55; s.speed *= 0.9; } },
+    { id: 'brasa', name: 'Brasa', color: '#ff8a4a', glow: '#ff4a1a', desc: 'Su estela arde desde el principio. Solo 3 corazones.', unlock: { id: 'jefe1', text: 'Vence a la Madre Polilla' },
+      stats: (s) => { s.maxHearts = 3; }, start: (w) => w.addDon('ardiente', true) },
+    { id: 'eco', name: 'Eco', color: '#dca8ff', glow: '#a45cff', desc: 'Cada lazo resuena dos veces. Solo 3 corazones.', unlock: { id: 'victoria', text: 'Gana una partida' },
+      stats: (s) => { s.maxHearts = 3; }, start: (w) => w.addDon('eco', true) },
+  ];
+
+  L.BIOMES = [
+    { id: 'bosque', name: 'Bosque de Luciérnagas', sub: 'Primera noche', bg: ['#030b0d', '#08221f', '#114238'], fog: '#3fd9a0', motes: '#c8ffe0',
+      pool: ['sombra', 'polilla', 'saltarin', 'gemelo', 'enjambre'], boss: 'madre' },
+    { id: 'pantano', name: 'Pantano de Niebla', sub: 'Segunda noche', bg: ['#05051a', '#121238', '#25246a'], fog: '#8a8dff', motes: '#dcdcff',
+      pool: ['sombra', 'polilla', 'saltarin', 'escupidor', 'tijereta', 'bombilla', 'caparazon', 'gemelo'], boss: 'ojo' },
+    { id: 'eclipse', name: 'Cielo Eclipse', sub: 'Última noche', bg: ['#0e030c', '#2c0a28', '#5c1844'], fog: '#ff7ab0', motes: '#ffdcea',
+      pool: ['polilla', 'saltarin', 'escupidor', 'tijereta', 'bombilla', 'caparazon', 'gemelo', 'enjambre', 'centinela'], boss: 'reina' },
+  ];
+
+  // cost = peso para presupuestos de oleadas
+  L.ENEMIES = {
+    sombra:    { name: 'Sombra', hp: 1, r: 15, speed: 72, cost: 1, polen: 2, color: '#2a2440', eye: '#ff9ad5', desc: 'Flota hacia ti sin prisa.' },
+    polilla:   { name: 'Polilla Oscura', hp: 1, r: 14, speed: 105, cost: 1.4, polen: 2, color: '#2c2238', eye: '#ffd36e', desc: 'Revolotea en zigzag. Más rápida de lo que parece.' },
+    saltarin:  { name: 'Saltarín', hp: 2, r: 17, speed: 0, cost: 2, polen: 3, color: '#20323a', eye: '#7dfcff', desc: 'Se agazapa y salta hacia ti.' },
+    gemelo:    { name: 'Gemelo', hp: 2, r: 19, speed: 60, cost: 2.2, polen: 3, color: '#352040', eye: '#ffb0ff', desc: 'Al caer se divide en dos sombras.' },
+    enjambre:  { name: 'Enjambre', hp: 1, r: 9, speed: 175, cost: 0.55, polen: 1, color: '#2a1a2a', eye: '#ff6a8a', desc: 'Diminutas y rapidísimas. Llegan en grupo.' },
+    escupidor: { name: 'Escupidor', hp: 2, r: 17, speed: 70, cost: 2.4, polen: 4, color: '#1e2a40', eye: '#9effa0', desc: 'Guarda las distancias y te escupe orbes.' },
+    tijereta:  { name: 'Tijereta', hp: 1, r: 13, speed: 165, cost: 2, polen: 4, color: '#3a2030', eye: '#ff7a5a', desc: 'Busca tu estela para cortarla. Huye de ti.' },
+    bombilla:  { name: 'Bombilla', hp: 1, r: 16, speed: 62, cost: 1.6, polen: 3, color: '#3a3020', eye: '#ffcc4a', desc: 'Estalla al caer y daña a las sombras cercanas. ¡No la toques!' },
+    caparazon: { name: 'Caparazón', hp: 4, r: 24, speed: 42, cost: 3, polen: 6, color: '#1c2430', eye: '#a8c8ff', desc: 'Lenta y dura. Hace falta encerrarla varias veces.' },
+    centinela: { name: 'Centinela', hp: 3, r: 18, speed: 110, cost: 3.2, polen: 6, color: '#2a1838', eye: '#ff5ad0', desc: 'Te rodea y dispara anillos de orbes.' },
+    // jefes
+    madre:     { name: 'Madre Polilla', hp: 10, r: 52, speed: 120, boss: true, polen: 40, color: '#2a2034', eye: '#ffd36e', desc: 'Señora del bosque. Cruza el cielo y llama a sus crías.' },
+    ojo:       { name: 'El Ojo del Pantano', hp: 15, r: 48, speed: 0, boss: true, polen: 55, color: '#151a3a', eye: '#9effe0', desc: 'Se teletransporta entre la niebla y dispara anillos de orbes.' },
+    reina:     { name: 'La Reina Eclipse', hp: 24, r: 58, speed: 90, boss: true, polen: 0, color: '#2a0a24', eye: '#ff5aa0', desc: 'El corazón de la noche. Tres fases, cada una más feroz.' },
+  };
+
+  /* ---------------- dones ---------------- */
+  const D = [];
+  const don = (o) => { D.push(o); return o; };
+  // comunes
+  don({ id: 'cola', name: 'Cola de Cometa', r: 1, max: 4, icon: 'comet', desc: 'Tu estela es un 25% más larga.', apply: (s) => { s.trailLen *= 1.25; } });
+  don({ id: 'alas', name: 'Alas Ligeras', r: 1, max: 3, icon: 'wing', desc: '+12% de velocidad.', apply: (s) => { s.speed *= 1.12; } });
+  don({ id: 'musgo', name: 'Corazón de Musgo', r: 1, max: 3, icon: 'heart', desc: '+1 corazón máximo. Te cura 1.', apply: (s) => { s.maxHearts += 1; }, onGain: (w) => w.heal(1) });
+  don({ id: 'iman', name: 'Imán de Polen', r: 1, max: 2, icon: 'magnet', desc: 'Atraes el polen desde el doble de distancia.', apply: (s) => { s.magnet *= 2; } });
+  don({ id: 'filo', name: 'Lazo Afilado', r: 1, max: 3, icon: 'blade', desc: '+1 de daño a cada lazo.', apply: (s) => { s.loopDmg += 1; } });
+  don({ id: 'chispazo', name: 'Chispazo', r: 1, max: 1, icon: 'spark', desc: 'Al cerrar un lazo, una onda daña a las sombras cercanas a su centro.',
+    onLoop: (w, c) => { w.shockwave(c.cx, c.cy, 120 + c.r * 0.3, 1, '#ffe28a'); } });
+  don({ id: 'destello', name: 'Destello', r: 1, max: 2, icon: 'bolt', desc: 'El impulso se recarga un 30% más rápido.', apply: (s) => { s.dashCd *= 0.7; } });
+  don({ id: 'rocio', name: 'Gota de Rocío', r: 1, max: 2, icon: 'drop', desc: 'Al limpiar una sala, 35% de curar 1 corazón.', onClear: (w) => { if (w.rng.chance(0.35)) { w.heal(1); w.text(w.p.x, w.p.y - 30, '+1 ♥', '#ff8aa8'); } } });
+  don({ id: 'seda', name: 'Bolsillo de Seda', r: 1, max: 2, icon: 'pouch', desc: '+30% de polen.', apply: (s) => { s.polenMul += 0.3; } });
+  don({ id: 'espinas', name: 'Espinas', r: 1, max: 1, icon: 'thorn', desc: 'Tu impulso atraviesa y daña a las sombras (2 de daño).', flag: 'thorns' });
+  don({ id: 'fino', name: 'Lazo Fino', r: 1, max: 1, icon: 'needle', desc: 'Los lazos pequeños hacen +2 de daño.', flag: 'fine' });
+  don({ id: 'abrazo', name: 'Gran Abrazo', r: 1, max: 1, icon: 'hug', desc: 'Los lazos con 3 o más sombras dan +4 de polen por cada una.',
+    onLoop: (w, c) => { if (c.hits.length >= 3) w.dropPolen(c.cx, c.cy, 4 * c.hits.length); } });
+  // infrecuentes
+  don({ id: 'eco', name: 'Eco', r: 2, max: 1, icon: 'echo', desc: 'Cada lazo vuelve a golpear en el mismo sitio 0,6 s después.', flag: 'echo' });
+  don({ id: 'supernova', name: 'Supernova', r: 2, max: 1, icon: 'nova', desc: 'Las sombras que caen en un lazo estallan y dañan a las de alrededor.', flag: 'nova' });
+  don({ id: 'escarcha', name: 'Escarcha', r: 2, max: 1, icon: 'snow', desc: 'Los lazos congelan 2 s a las sombras cercanas que no atrapan.',
+    onLoop: (w, c) => { for (const e of w.enemies) if (!c.hits.includes(e) && !e.boss && L.dist(e.x, e.y, c.cx, c.cy) < c.r + 160) { e.frozen = 2; } w.ring(c.cx, c.cy, '#aef0ff', c.r + 160); } });
+  don({ id: 'hermana', name: 'Luciérnaga Hermana', r: 2, max: 2, icon: 'sister', desc: 'Una compañera orbita a tu alrededor y quema a las sombras que toca.', flag: 'sister' });
+  don({ id: 'petalo', name: 'Pétalo Escudo', r: 2, max: 1, icon: 'shield', desc: 'Un escudo bloquea un golpe. Se recarga en cada sala.', flag: 'petal', onRoom: (w) => { w.p.shield = 1; }, onGain: (w) => { w.p.shield = 1; } });
+  don({ id: 'remolino', name: 'Remolino', r: 2, max: 1, icon: 'swirl', desc: 'Al cerrar un lazo, atraes las sombras cercanas hacia su centro.',
+    onLoop: (w, c) => { for (const e of w.enemies) { if (e.boss) continue; const d = L.dist(e.x, e.y, c.cx, c.cy); if (d < 320 && d > 1) { e.kx += ((c.cx - e.x) / d) * 520; e.ky += ((c.cy - e.y) / d) * 520; } } w.ring(c.cx, c.cy, '#c7a6ff', 320, true); } });
+  don({ id: 'flor', name: 'Semilla de Luz', r: 2, max: 1, icon: 'flower', desc: 'Cada lazo planta una flor que quema lo que tenga cerca durante 4 s.',
+    onLoop: (w, c) => { w.zones.push({ x: c.cx, y: c.cy, r: Math.min(140, 50 + c.r * 0.4), t: 4, tick: 0, dmg: 1, color: '#ffd0f0', kind: 'flor' }); } });
+  don({ id: 'racha', name: 'Racha', r: 2, max: 1, icon: 'chain', desc: 'Lazos seguidos (menos de 1,5 s entre ellos) hacen +1 de daño acumulativo (hasta +3).', flag: 'streak' });
+  don({ id: 'ardiente', name: 'Estela Ardiente', r: 2, max: 1, icon: 'flame', desc: 'Tu estela quema a las sombras que la tocan.', flag: 'burn' });
+  don({ id: 'niebla', name: 'Velo de Niebla', r: 2, max: 1, icon: 'veil', desc: 'Al recibir un golpe, las sombras se ralentizan 3 s y tu invulnerabilidad dura el doble.', flag: 'veil' });
+  don({ id: 'raices', name: 'Raíces Firmes', r: 2, max: 1, icon: 'root', desc: 'Nada puede cortar tu estela.', flag: 'uncut' });
+  don({ id: 'polendorado', name: 'Polen Dorado', r: 2, max: 1, icon: 'coin', desc: 'Al limpiar una sala ganas un 15% de tu polen (hasta 25).', onClear: (w) => { const v = Math.min(25, Math.floor(w.polen * 0.15)); if (v) { w.polen += v; w.text(w.p.x, w.p.y - 40, '+' + v + ' polen', '#ffe28a'); } } });
+  // raros
+  don({ id: 'corona', name: 'Corona Solar', r: 3, max: 1, icon: 'sun', desc: 'Cada cuarto lazo es solar: triple de daño y estalla en llamas.', flag: 'solar' });
+  don({ id: 'fenix', name: 'Pluma de Fénix', r: 3, max: 1, icon: 'phoenix', desc: 'Si caes, renaces una vez con 2 corazones.', flag: 'phoenix', onGain: (w) => { w.p.revive = 1; } });
+  don({ id: 'reloj', name: 'Reloj de Arena', r: 3, max: 1, icon: 'hourglass', desc: 'Atrapar 2 o más sombras de golpe ralentiza a todas las demás 1,5 s.',
+    onLoop: (w, c) => { if (c.hits.length >= 2) { w.slowT = 1.5; } } });
+  don({ id: 'perpetuo', name: 'Lazo Perpetuo', r: 3, max: 1, icon: 'infinity', desc: 'Cerrar un lazo no consume tu estela: encadena lazos sin parar.', flag: 'perpetual' });
+  don({ id: 'constelacion', name: 'Constelación', r: 3, max: 1, icon: 'stars', desc: 'Cada sombra atrapada recibe +1 de daño por cada otra sombra atrapada con ella.', flag: 'constellation' });
+  don({ id: 'cometa', name: 'Cometa', r: 3, max: 1, icon: 'meteor', desc: 'Tu impulso dura el doble y aniquila al instante a las sombras de 1 vida.', apply: (s) => { s.dashDur *= 2; }, flag: 'comet' });
+  don({ id: 'cristal', name: 'Corazón de Cristal', r: 3, max: 1, icon: 'gem', desc: '+2 corazones máximos y curación completa, pero −10% de velocidad.', apply: (s) => { s.maxHearts += 2; s.speed *= 0.9; }, onGain: (w) => w.heal(99) });
+  don({ id: 'gemela', name: 'Estela Gemela', r: 3, max: 1, icon: 'twin', desc: 'Una segunda estela, reflejo de la tuya, también cierra lazos.', flag: 'twin' });
+  L.DONES = D;
+  L.DON = Object.fromEntries(D.map((d) => [d.id, d]));
+  L.RARITY = { 1: { name: 'Común', color: '#9fd8ff' }, 2: { name: 'Infrecuente', color: '#9cffb0' }, 3: { name: 'Raro', color: '#ffb36a' } };
+
+  /* ---------------- eventos ---------------- */
+  L.EVENTS = [
+    { id: 'estanque', title: 'El Estanque de las Estrellas', icon: 'pond', text: 'Un agua quieta refleja un cielo que no es el tuyo. Algo brilla en el fondo.',
+      opts: [
+        { t: 'Beber un sorbo', d: 'Cura 2 corazones.', run: (w) => { w.heal(2); return 'El agua sabe a madrugada. Te sientes mejor.'; } },
+        { t: 'Sumergirte a por el brillo', d: 'Pierdes 1 corazón. Ganas un don al azar.', run: (w) => { w.hurtRaw(1); const d = w.randomDon(2); w.addDon(d.id); return 'Sales empapada con ' + d.name + '.'; } },
+        { t: 'Seguir tu camino', d: '', run: () => 'Dejas el estanque atrás.' },
+      ] },
+    { id: 'seta', title: 'La Seta Parlante', icon: 'mushroom', text: '—Psst, lucecita. Por un poco de polen te cuento un secreto. O puedes darme un mordisco, si te atreves.',
+      opts: [
+        { t: 'Pagar 30 de polen', d: 'Elige entre 3 dones infrecuentes o raros.', cost: 30, run: (w) => { w.polen -= 30; w.pendingChoice = { rarityMin: 2 }; return 'La seta susurra y tres luces se encienden a tu alrededor.'; } },
+        { t: 'Morderla', d: '50%: +1 corazón máximo. 50%: pierdes 1 corazón.', run: (w) => { if (w.rng.chance(0.5)) { w.p.bonusHearts++; w.recalc(); w.heal(1); return '¡Deliciosa! Tu luz crece.'; } w.hurtRaw(1); return '¡Puaj! Era venenosa.'; } },
+        { t: 'Marcharte', d: '', run: () => '—¡Tú te lo pierdes!' },
+      ] },
+    { id: 'altar', title: 'El Altar Olvidado', icon: 'altar', text: 'Un altar de piedra cubierto de musgo pide una ofrenda de luz.',
+      opts: [
+        { t: 'Ofrecer un corazón máximo', d: 'Pierdes 1 corazón máximo. Eliges un don raro entre 3.', can: (w) => w.p.st.maxHearts > 2, run: (w) => { w.p.bonusHearts--; w.recalc(); w.pendingChoice = { rarityMin: 3 }; return 'La piedra se abre en un resplandor dorado.'; } },
+        { t: 'Ofrecer 50 de polen', d: 'Ganas un don al azar.', cost: 50, run: (w) => { w.polen -= 50; const d = w.randomDon(1); w.addDon(d.id); return 'El altar te concede ' + d.name + '.'; } },
+        { t: 'No ofrecer nada', d: '', run: () => 'El altar sigue esperando a otro viajero.' },
+      ] },
+    { id: 'arbol', title: 'El Árbol de los Deseos', icon: 'tree', text: 'Sus ramas están llenas de cintas de colores. Solo puedes pedir un deseo.',
+      opts: [
+        { t: 'Desear fuerza', d: '+1 de daño de lazo. Pierdes 1 corazón.', run: (w) => { w.p.bonusDmg++; w.recalc(); w.hurtRaw(1); return 'Tus lazos se vuelven más afilados.'; } },
+        { t: 'Desear salud', d: 'Te curas por completo.', run: (w) => { w.heal(99); return 'Una brisa cálida te envuelve.'; } },
+        { t: 'Desear riqueza', d: '+60 de polen.', run: (w) => { w.polen += 60; return 'Llueve polen dorado de las ramas.'; } },
+      ] },
+    { id: 'cofre', title: 'El Cofre Sombrío', icon: 'chest', text: 'Un cofre tiembla ligeramente. ¿Tesoro o trampa?',
+      opts: [
+        { t: 'Abrirlo', d: '65%: un don infrecuente. 35%: te muerde (−1 corazón).', run: (w) => { if (w.rng.chance(0.65)) { const d = w.randomDon(2, 2); w.addDon(d.id); return '¡Dentro estaba ' + d.name + '!'; } w.hurtRaw(1); return '¡Era una sombra disfrazada! Te muerde y huye.'; } },
+        { t: 'Dejarlo en paz', d: '', run: () => 'Mejor no tentar a la suerte.' },
+      ] },
+    { id: 'buho', title: 'El Viejo Búho', icon: 'owl', text: '—Uuh. Las luciérnagas jóvenes vuelan demasiado deprisa. Deja que te enseñe algo.',
+      opts: [
+        { t: 'Aprender a volar', d: '+10% de velocidad.', run: (w) => { w.p.bonusSpeed += 0.1; w.recalc(); return 'Tus alas se mueven con más soltura.'; } },
+        { t: 'Aprender paciencia', d: 'Tu estela es un 20% más larga.', run: (w) => { w.p.bonusTrail += 0.2; w.recalc(); return 'Tu luz se alarga como un suspiro.'; } },
+        { t: 'Cambiar un don', d: 'Pierdes un don al azar y ganas otro de rareza superior.', can: (w) => w.dones.some((d) => !d.innate && L.DON[d.id].r < 3), run: (w) => { const pool = w.dones.filter((d) => !d.innate && L.DON[d.id].r < 3); const o = w.rng.pick(pool); w.removeDon(o.id); const n = w.randomDon(L.DON[o.id].r + 1, L.DON[o.id].r + 1); w.addDon(n.id); return 'Tu ' + L.DON[o.id].name + ' se transforma en ' + n.name + '.'; } },
+      ] },
+    { id: 'lluvia', title: 'Lluvia de Polen', icon: 'rain', text: 'Las flores del claro sueltan su polen al viento. Brilla como una nevada dorada.',
+      opts: [
+        { t: 'Recogerlo todo', d: '+35 de polen.', run: (w) => { w.polen += 35; return 'Llenas los bolsillos de oro brillante.'; } },
+        { t: 'Bailar bajo la lluvia', d: 'Cura 1 corazón y +15 de polen.', run: (w) => { w.heal(1); w.polen += 15; return 'Bailas hasta que se apaga la última mota.'; } },
+      ] },
+    { id: 'espejo', title: 'El Espejo de la Luna', icon: 'mirror', text: 'En el espejo ves otra luciérnaga que te imita… con un don que tú no tienes.',
+      opts: [
+        { t: 'Tocar el espejo', d: 'Duplicas un don que ya tengas (si se puede acumular). Pierdes 15 de polen.', cost: 15, can: (w) => w.dones.some((d) => w.donCount(d.id) < L.DON[d.id].max), run: (w) => { w.polen -= 15; const pool = w.dones.filter((d) => w.donCount(d.id) < L.DON[d.id].max); const d = w.rng.pick(pool); w.addDon(d.id); return 'Tu reflejo te devuelve ' + L.DON[d.id].name + '.'; } },
+        { t: 'Romperlo', d: '+25 de polen. Pierdes 1 corazón.', run: (w) => { w.polen += 25; w.hurtRaw(1); return 'Los cristales se convierten en polen… y uno te corta.'; } },
+        { t: 'Alejarte', d: '', run: () => 'La otra luciérnaga te despide con la mano.' },
+      ] },
+  ];
+
+  L.NODE_TYPES = {
+    combat: { name: 'Sombras', icon: 'swords', color: '#9fd8ff', desc: 'Limpia la sala de sombras. Recompensa: un don.' },
+    elite: { name: 'Sombra mayor', icon: 'skull', color: '#ff8a8a', desc: 'Sombras más feroces. Recompensa: un don mejor.' },
+    treasure: { name: 'Tesoro', icon: 'chest', color: '#ffd36e', desc: 'Un don gratis, sin pelear.' },
+    shop: { name: 'Mercado', icon: 'lantern', color: '#9cffb0', desc: 'Cambia polen por dones y corazones.' },
+    fountain: { name: 'Manantial', icon: 'drop', color: '#ff9ac8', desc: 'Descansa: cura o fortalece tu luz.' },
+    event: { name: 'Misterio', icon: 'question', color: '#d9b3ff', desc: 'Algo inesperado te espera.' },
+    boss: { name: 'Guardián', icon: 'crown', color: '#ff6a9a', desc: 'El señor de esta noche.' },
+  };
+
+  L.ACH = [
+    { id: 'primer', name: 'Primer lazo', desc: 'Atrapa una sombra con un lazo' },
+    { id: 'triple', name: 'Lazo triple', desc: 'Atrapa 3 sombras en un solo lazo' },
+    { id: 'seis', name: 'Red de estrellas', desc: 'Atrapa 6 sombras en un solo lazo' },
+    { id: 'diez', name: 'Constelación viva', desc: 'Atrapa 10 sombras en un solo lazo' },
+    { id: 'jefe1', name: 'Madre derrotada', desc: 'Vence a la Madre Polilla' },
+    { id: 'pantano', name: 'Entre la niebla', desc: 'Llega al Pantano de Niebla' },
+    { id: 'jefe2', name: 'Ojo cerrado', desc: 'Vence al Ojo del Pantano' },
+    { id: 'victoria', name: 'Amanecer', desc: 'Gana una partida' },
+    { id: 'intacta', name: 'Sin un rasguño', desc: 'Limpia una sala de élite sin recibir daño' },
+    { id: 'rica', name: 'Bolsillos llenos', desc: 'Ten 200 de polen a la vez' },
+    { id: 'coleccion', name: 'Coleccionista', desc: 'Ten 12 dones a la vez' },
+    { id: 'velocista', name: 'Estrella fugaz', desc: 'Gana una partida en menos de 20 minutos' },
+    { id: 'luna3', name: 'Luna creciente', desc: 'Gana con la Luna III o superior' },
+    { id: 'todos', name: 'Familia de luz', desc: 'Desbloquea todas las luciérnagas' },
+  ];
+
+  L.MOONS = [
+    { name: 'Luna Llena', desc: 'La noche de siempre.' },
+    { name: 'Luna I', desc: 'Aparecen un 25% más de sombras.' },
+    { name: 'Luna II', desc: 'Las sombras son un 10% más rápidas.' },
+    { name: 'Luna III', desc: 'Empiezas con un corazón menos.' },
+    { name: 'Luna IV', desc: 'Las salas tienen una oleada extra.' },
+    { name: 'Luna Nueva', desc: 'Los Guardianes tienen un 30% más de vida. La noche más oscura.' },
+  ];
+})(globalThis.L = globalThis.L || {});
+
+</script>
+<script>
+/* LAZO — simulación del mundo (sin DOM): estela, lazos, sombras, jefes, salas y mapa */
+(function (L) {
+  'use strict';
+  const TAU = Math.PI * 2;
+
+  class World {
+    constructor(o) {
+      this.seed = (o.seed || L.seedStr()).toUpperCase();
+      this.rng = new L.RNG(L.hash(this.seed));
+      this.charId = o.charId || 'lumi';
+      this.moon = o.moon || 0;
+      this.W = o.W || 1200; this.H = o.H || 760;
+      this.floor = 0;
+      this.polen = 0;
+      this.dones = [];
+      this.p = { x: this.W / 2, y: this.H / 2, vx: 0, vy: 0, r: 11, hearts: 4, st: { ...L.BASE }, inv: 0, dashT: 0, dashCd: 0, shield: 0, revive: 0, bonusHearts: 0, bonusDmg: 0, bonusSpeed: 0, bonusTrail: 0, face: 0 };
+      this.stats = { loops: 0, kills: 0, bestCombo: 0, hurt: 0, polen: 0, rooms: 0, time: 0, score: 0 };
+      this.events = []; // eventos para la interfaz (sonido, logros…)
+      this.input = { tx: null, ty: null, kx: 0, ky: 0, dash: false, mode: 'pointer' };
+      this.resetRoom();
+      this.recalc();
+      this.p.hearts = this.p.st.maxHearts;
+      const C = L.CHARS.find((c) => c.id === this.charId);
+      if (C && C.start) C.start(this);
+      this.genMap();
+      this.phase = 'map';
+    }
+
+    /* ---------------- estado persistente ---------------- */
+    save() {
+      return {
+        seed: this.seed, rngS: this.rng.s, charId: this.charId, moon: this.moon, floor: this.floor, polen: this.polen,
+        dones: this.dones, map: this.map, pos: this.pos, visited: this.visited, stats: this.stats,
+        p: { hearts: this.p.hearts, shield: this.p.shield, revive: this.p.revive, bonusHearts: this.p.bonusHearts, bonusDmg: this.p.bonusDmg, bonusSpeed: this.p.bonusSpeed, bonusTrail: this.p.bonusTrail },
+      };
+    }
+    static load(d, W, H) {
+      const w = new World({ seed: d.seed, charId: d.charId, moon: d.moon, W, H });
+      w.rng.s = d.rngS; w.floor = d.floor; w.polen = d.polen; w.dones = d.dones; w.map = d.map; w.pos = d.pos; w.visited = d.visited || []; w.stats = d.stats;
+      Object.assign(w.p, d.p);
+      w.recalc();
+      w.phase = 'map';
+      return w;
+    }
+
+    resize(W, H) {
+      const sx = W / this.W, sy = H / this.H;
+      this.W = W; this.H = H;
+      const sc = (o) => { o.x *= sx; o.y *= sy; };
+      sc(this.p); this.enemies.forEach(sc); this.bullets.forEach(sc); this.pickups.forEach(sc); this.zones.forEach(sc);
+      this.trail = [];
+    }
+
+    /* ---------------- dones ---------------- */
+    donCount(id) { return this.dones.filter((d) => d.id === id).length; }
+    has(flag) { return this.dones.some((d) => L.DON[d.id].flag === flag); }
+    addDon(id, innate) {
+      const d = L.DON[id];
+      this.dones.push({ id, innate: !!innate });
+      this.recalc();
+      if (d.onGain) d.onGain(this);
+      this.events.push({ t: 'don', id });
+      if (this.dones.length >= 12) this.ach('coleccion');
+    }
+    removeDon(id) { const i = this.dones.findIndex((d) => d.id === id); if (i >= 0) this.dones.splice(i, 1); this.recalc(); }
+    recalc() {
+      const s = { ...L.BASE };
+      const C = L.CHARS.find((c) => c.id === this.charId);
+      if (C && C.stats) C.stats(s);
+      for (const d of this.dones) { const D = L.DON[d.id]; if (D.apply) D.apply(s); }
+      s.maxHearts += this.p.bonusHearts;
+      s.loopDmg += this.p.bonusDmg;
+      s.speed *= 1 + this.p.bonusSpeed;
+      s.trailLen *= 1 + this.p.bonusTrail;
+      if (this.moon >= 3) s.maxHearts -= 1;
+      s.maxHearts = Math.max(1, s.maxHearts);
+      this.p.st = s;
+      this.p.hearts = Math.min(this.p.hearts, s.maxHearts);
+    }
+    randomDon(rmin = 1, rmax = 3, exclude = []) {
+      const owned = (id) => this.donCount(id) >= L.DON[id].max;
+      let pool = L.DONES.filter((d) => d.r >= rmin && d.r <= rmax && !owned(d.id) && !exclude.includes(d.id));
+      if (!pool.length) pool = L.DONES.filter((d) => !owned(d.id) && !exclude.includes(d.id));
+      if (!pool.length) pool = L.DONES.slice();
+      const wr = { 1: 60, 2: 30, 3: 10 };
+      return this.rng.weighted(pool, (d) => wr[d.r]);
+    }
+    donChoices(kind) {
+      const out = [];
+      const ranges = { combat: [1, 3], elite: [2, 3], treasure: [2, 3], rare: [3, 3], boss: [2, 3] };
+      const [a, b] = ranges[kind] || [1, 3];
+      for (let i = 0; i < 3; i++) out.push(this.randomDon(a, b, out.map((d) => d.id)));
+      return out;
+    }
+    heal(n) { this.p.hearts = Math.min(this.p.st.maxHearts, this.p.hearts + n); this.events.push({ t: 'heal' }); }
+    hurtRaw(n) { this.p.hearts = Math.max(1, this.p.hearts - n); this.events.push({ t: 'hurt' }); }
+    ach(id) { this.events.push({ t: 'ach', id }); }
+
+    /* ---------------- mapa ---------------- */
+    genMap() {
+      const layers = [];
+      const nodes = [];
+      const R = this.rng;
+      const NL = 6;
+      for (let l = 0; l < NL; l++) {
+        const n = l === 0 ? 2 : R.int(2, 4);
+        const row = [];
+        for (let i = 0; i < n; i++) {
+          let type;
+          if (l === 0) type = 'combat';
+          else if (l === NL - 1) type = i % 2 ? 'shop' : 'fountain';
+          else type = R.weighted(['combat', 'elite', 'event', 'treasure', 'shop', 'fountain'], (t) => ({ combat: 46, elite: l >= 2 ? 14 : 0, event: 16, treasure: l >= 2 ? 8 : 3, shop: l >= 2 ? 8 : 0, fountain: l >= 2 ? 7 : 0 }[t]));
+          const node = { id: nodes.length, l, i, n, type, x: (i + 1) / (n + 1) + R.range(-0.04, 0.04), next: [] };
+          nodes.push(node); row.push(node);
+        }
+        layers.push(row);
+      }
+      const boss = { id: nodes.length, l: NL, i: 0, n: 1, type: 'boss', x: 0.5, next: [] };
+      nodes.push(boss);
+      for (let l = 0; l < NL - 1; l++) {
+        const a = layers[l], b = layers[l + 1];
+        for (const n of a) {
+          const near = b.slice().sort((p, q) => Math.abs(p.x - n.x) - Math.abs(q.x - n.x));
+          n.next.push(near[0].id);
+          if (near[1] && R.chance(0.45)) n.next.push(near[1].id);
+        }
+        for (const m of b) if (!a.some((n) => n.next.includes(m.id))) { const c = a.slice().sort((p, q) => Math.abs(p.x - m.x) - Math.abs(q.x - m.x))[0]; c.next.push(m.id); }
+      }
+      for (const n of layers[NL - 1]) n.next.push(boss.id);
+      // garantizar variedad: al menos un mercado y un misterio en el piso
+      const mids = nodes.filter((n) => n.l >= 2 && n.l <= 4);
+      if (!nodes.some((n) => n.type === 'event') && mids.length) R.pick(mids).type = 'event';
+      this.map = { nodes, layers: NL + 1 };
+      this.pos = null;
+      this.visited = [];
+    }
+    available() {
+      if (this.pos == null) return this.map.nodes.filter((n) => n.l === 0).map((n) => n.id);
+      return this.map.nodes[this.pos].next.slice();
+    }
+    choose(id) {
+      if (!this.available().includes(id)) return null;
+      this.pos = id;
+      this.visited.push(id);
+      return this.map.nodes[id];
+    }
+    nextFloor() {
+      this.floor++;
+      this.genMap();
+      if (this.floor === 1) this.ach('pantano');
+    }
+    biome() { return L.BIOMES[Math.min(2, this.floor)]; }
+
+    /* ---------------- salas ---------------- */
+    resetRoom() {
+      this.enemies = []; this.bullets = []; this.pickups = []; this.zones = [];
+      this.parts = []; this.rings = []; this.flashes = []; this.texts = []; this.echoes = []; this.beams = [];
+      this.trail = []; this.trailLenNow = 0;
+      this.waves = []; this.wave = 0; this.waveT = 0;
+      this.roomT = 0; this.slowT = 0; this.hitstop = 0; this.shake = 0;
+      this.streak = 0; this.lastLoopT = -9; this.loopN = 0; this.lastKillT = 0;
+      this.cleared = false; this.clearT = 0; this.roomHurt = 0;
+      this.boss = null;
+    }
+    startRoom(type) {
+      this.resetRoom();
+      this.roomType = type;
+      this.phase = 'room';
+      const p = this.p;
+      p.x = this.W / 2; p.y = this.H / 2; p.vx = p.vy = 0; p.inv = 1; p.dashT = 0; p.dashCd = 0;
+      this.input.tx = null;
+      for (const d of this.dones) { const D = L.DON[d.id]; if (D.onRoom) D.onRoom(this); }
+      if (type === 'boss') this.planBoss();
+      else this.planWaves(type);
+    }
+    planWaves(type) {
+      const node = this.map.nodes[this.pos];
+      const depth = node ? node.l : 0;
+      const R = this.rng;
+      const B = L.BIOMES[Math.min(2, this.floor)];
+      let budget = 3.2 + this.floor * 3.4 + depth * 0.9;
+      if (type === 'elite') budget *= 1.15;
+      if (this.moon >= 1) budget *= 1.25;
+      let nw = 2 + (this.floor >= 1 ? 1 : 0) + (depth >= 4 ? 1 : 0) + (this.moon >= 4 ? 1 : 0);
+      if (this.floor === 0 && depth <= 1) nw = 2;
+      let pool = B.pool.slice();
+      if (this.floor === 0 && depth <= 1) pool = ['sombra', 'polilla'];
+      else if (this.floor === 0 && depth <= 3) pool = pool.filter((t) => t !== 'enjambre');
+      for (let w = 0; w < nw; w++) {
+        let b = budget * (0.75 + w * 0.22);
+        const list = [];
+        if (type === 'elite' && (w === nw - 1 || w === 0)) { const t = R.pick(pool.filter((x) => x !== 'enjambre')); list.push({ t, elite: true }); b -= L.ENEMIES[t].cost * 3; }
+        let guard = 0;
+        while (b > 0.5 && guard++ < 40) {
+          const t = R.pick(pool);
+          if (t === 'enjambre') { const n = R.int(4, 6); for (let i = 0; i < n; i++) list.push({ t }); b -= L.ENEMIES[t].cost * n; }
+          else { list.push({ t }); b -= L.ENEMIES[t].cost; }
+        }
+        this.waves.push(list);
+      }
+    }
+    planBoss() {
+      const B = this.biome();
+      const id = B.boss;
+      const E = L.ENEMIES[id];
+      const e = this.spawnEnemy(id, this.W / 2, this.H * 0.25, { delay: 1.4 });
+      e.hp = e.maxHp = Math.round(E.hp * (this.moon >= 5 ? 1.3 : 1));
+      this.boss = e;
+      this.waves = [];
+    }
+    spawnEnemy(t, x, y, o = {}) {
+      const E = L.ENEMIES[t];
+      const el = !!o.elite;
+      const speedMul = (this.moon >= 2 ? 1.1 : 1) * (1 + this.floor * 0.06);
+      const e = {
+        id: Math.random().toString(36).slice(2, 9), t, x, y, vx: 0, vy: 0, kx: 0, ky: 0,
+        r: E.r * (el ? 1.45 : 1), hp: E.hp * (el ? 3 : 1), maxHp: E.hp * (el ? 3 : 1), speed: E.speed * speedMul * (el ? 1.08 : 1),
+        elite: el, boss: !!E.boss, spawn: o.delay != null ? o.delay : 0.9, age: 0, st: 0, timer: this.rng.range(0.5, 2), flash: 0, frozen: 0, burnT: 0,
+        ph: this.rng.range(0, TAU), ihit: 0, dashHit: 0, phase: 1,
+      };
+      this.enemies.push(e);
+      return e;
+    }
+    spawnPos(minD = 230) {
+      const m = 50;
+      for (let i = 0; i < 30; i++) {
+        const x = this.rng.range(m, this.W - m), y = this.rng.range(m + 30, this.H - m);
+        if (L.dist(x, y, this.p.x, this.p.y) > minD) return { x, y };
+      }
+      return { x: this.rng.range(m, this.W - m), y: m + 30 };
+    }
+    launchWave() {
+      const list = this.waves[this.wave++];
+      if (!list) return;
+      const swarmAt = this.spawnPos();
+      for (const s of list) {
+        const pos = s.t === 'enjambre' ? { x: swarmAt.x + this.rng.range(-50, 50), y: swarmAt.y + this.rng.range(-50, 50) } : this.spawnPos();
+        this.spawnEnemy(s.t, pos.x, pos.y, { elite: s.elite, delay: 0.9 + this.rng.range(0, 0.5) });
+      }
+      this.waveT = 0;
+      this.lastWaveN = list.length;
+      this.events.push({ t: 'wave', n: this.wave, of: this.waves.length });
+    }
+
+    /* ---------------- bucle principal ---------------- */
+    update(dt) {
+      if (this.phase !== 'room') return;
+      if (this.hitstop > 0) { this.hitstop -= dt; dt *= 0.08; }
+      this.roomT += dt; this.stats.time += dt;
+      this.shake = Math.max(0, this.shake - dt * 30);
+      this.updatePlayer(dt);
+      this.updateTrail();
+      // oleadas
+      if (!this.cleared && this.roomType !== 'boss') {
+        this.waveT += dt;
+        const alive = this.enemies.length;
+        if (this.wave < this.waves.length && (this.wave === 0 ? this.roomT > 0.6 : this.waveT > 2.5 && (alive <= Math.max(1, Math.floor(this.lastWaveN * 0.3)) || this.waveT > 16))) this.launchWave();
+        if (this.wave >= this.waves.length && this.enemies.length === 0) this.clearRoom();
+        // las últimas sombras se cansan si la sala se alarga
+        this.lastKillT = this.lastKillT || 0;
+        if (this.wave >= this.waves.length && this.enemies.length <= 2 && this.roomT - this.lastKillT > 10) for (const e of this.enemies) e.tired = true;
+      }
+      const sl = this.slowT > 0 ? 0.35 : 1;
+      this.slowT = Math.max(0, this.slowT - dt);
+      this.updateEnemies(dt * sl, dt);
+      this.updateBullets(dt * sl);
+      this.updateZones(dt);
+      this.updatePickups(dt);
+      this.updateEchoes(dt);
+      this.updateFx(dt);
+      if (this.cleared) {
+        this.clearT += dt;
+        if (this.clearT > 1.3 && !this.doneEmitted) { this.doneEmitted = true; this.events.push({ t: 'roomDone' }); }
+      }
+      if (this.polen >= 200) this.ach('rica');
+    }
+
+    updatePlayer(dt) {
+      const p = this.p, s = p.st, I = this.input;
+      p.inv = Math.max(0, p.inv - dt);
+      p.dashCd = Math.max(0, p.dashCd - dt);
+      let dx = 0, dy = 0, want = 0;
+      if (I.kx || I.ky) { const m = Math.hypot(I.kx, I.ky); dx = I.kx / m; dy = I.ky / m; want = s.speed; }
+      else if (I.tx != null) {
+        const ddx = I.tx - p.x, ddy = I.ty - p.y, d = Math.hypot(ddx, ddy);
+        if (d > 2) { dx = ddx / d; dy = ddy / d; want = Math.min(s.speed, d * 7); }
+      }
+      if (I.dash) {
+        I.dash = false;
+        if (p.dashCd <= 0 && !this.cleared) {
+          let ax = dx, ay = dy;
+          if (!ax && !ay) { const m = Math.hypot(p.vx, p.vy); if (m > 1) { ax = p.vx / m; ay = p.vy / m; } else { ax = Math.cos(p.face); ay = Math.sin(p.face); } }
+          p.dashT = s.dashDur; p.dashCd = s.dashCd; p.dax = ax; p.day = ay;
+          for (const e of this.enemies) e.dashHit = 0;
+          this.events.push({ t: 'dash' });
+          this.burst(p.x, p.y, 10, '#ffffff', 220, 0.3, 2);
+        }
+      }
+      if (p.dashT > 0) {
+        p.dashT -= dt;
+        p.vx = p.dax * s.dashSpeed; p.vy = p.day * s.dashSpeed;
+      } else {
+        const k = Math.min(1, dt * 11);
+        p.vx += (dx * want - p.vx) * k; p.vy += (dy * want - p.vy) * k;
+      }
+      p.x += p.vx * dt; p.y += p.vy * dt;
+      const m = 16;
+      p.x = L.clamp(p.x, m, this.W - m); p.y = L.clamp(p.y, m, this.H - m);
+      if (Math.hypot(p.vx, p.vy) > 20) p.face = Math.atan2(p.vy, p.vx);
+    }
+
+    /* ---------------- estela y lazos ---------------- */
+    updateTrail() {
+      const p = this.p, T = this.trail;
+      const last = T[T.length - 1];
+      if (!last) { T.push({ x: p.x, y: p.y }); return; }
+      const d = L.dist(last.x, last.y, p.x, p.y);
+      if (d < 6) return;
+      const np = { x: p.x, y: p.y };
+      // intersección con la estela previa (de la más reciente a la más antigua)
+      let hit = null, hi = -1;
+      for (let i = T.length - 3; i >= 1; i--) {
+        const a = T[i - 1], b = T[i];
+        const x = L.segX(last.x, last.y, np.x, np.y, a.x, a.y, b.x, b.y);
+        if (x) { hit = x; hi = i; break; }
+      }
+      T.push(np);
+      this.trailLenNow += d;
+      if (hit) {
+        const poly = [{ x: hit.x, y: hit.y }];
+        for (let k = hi; k < T.length - 1; k++) poly.push(T[k]);
+        const area = L.polyArea(poly);
+        if (area > 900) {
+          this.closeLoop(poly, area);
+          if (!this.has('perpetual')) { this.trail = [{ x: hit.x, y: hit.y }, np]; this.trailLenNow = L.dist(hit.x, hit.y, np.x, np.y); }
+        }
+      }
+      // recortar longitud
+      const T2 = this.trail;
+      while (this.trailLenNow > p.st.trailLen && T2.length > 2) {
+        this.trailLenNow -= L.dist(T2[0].x, T2[0].y, T2[1].x, T2[1].y);
+        T2.shift();
+      }
+    }
+    mirror(poly) { return poly.map((q) => ({ x: this.W - q.x, y: this.H - q.y })); }
+    closeLoop(poly, area) {
+      this.loopN++;
+      this.stats.loops++;
+      const now = this.roomT;
+      if (this.has('streak')) { this.streak = now - this.lastLoopT < 1.5 ? Math.min(3, this.streak + 1) : 0; }
+      this.lastLoopT = now;
+      const solar = this.has('solar') && this.loopN % 4 === 0;
+      const ctx = this.applyLoop(poly, area, { solar, primary: true });
+      if (this.has('twin')) this.applyLoop(this.mirror(poly), area, { solar, twin: true });
+      if (this.has('echo')) this.echoes.push({ poly, area, t: 0.6, solar });
+      for (const d of this.dones) { const D = L.DON[d.id]; if (D.onLoop) D.onLoop(this, ctx); }
+      return ctx;
+    }
+    applyLoop(poly, area, o) {
+      const c = L.polyCenter(poly);
+      const r = Math.sqrt(area / Math.PI);
+      const hits = this.enemies.filter((e) => e.spawn <= 0 && L.inPoly(e.x, e.y, poly));
+      let dmg = this.p.st.loopDmg;
+      if (this.has('fine') && area < 15000) dmg += 2;
+      if (o.primary || o.twin) dmg += this.streak || 0;
+      if (o.solar) dmg *= 3;
+      const n = hits.length;
+      for (const e of hits) {
+        let d = dmg;
+        if (this.has('constellation')) d += n - 1;
+        if (e.boss && e.ihit > 0) continue;
+        this.damage(e, d, 'loop');
+        if (e.boss) e.ihit = 0.35;
+      }
+      // polen dentro del lazo
+      for (const k of this.pickups) if (L.inPoly(k.x, k.y, poly)) k.pull = true;
+      this.flashes.push({ poly: poly.map((q) => ({ x: q.x, y: q.y })), t: 0, life: o.echo ? 0.45 : 0.7, hits: n, solar: o.solar, echo: o.echo });
+      const col = o.solar ? '#ffb030' : o.echo ? '#d9b3ff' : (L.CHARS.find((x) => x.id === this.charId) || L.CHARS[0]).color;
+      for (let k = 0; k < poly.length; k += 2) { const q = poly[k], dx = q.x - c.x, dy = q.y - c.y, d = Math.hypot(dx, dy) || 1; this.parts.push({ x: q.x, y: q.y, vx: (dx / d) * this.rng.range(20, 90), vy: (dy / d) * this.rng.range(20, 90), life: this.rng.range(0.4, 0.9), t: 0, c: k % 4 ? col : '#ffffff', s: this.rng.range(1.5, 3) }); }
+      if (o.solar) { this.shockwave(c.x, c.y, 160 + r * 0.4, 2, '#ffb030'); this.shake = Math.max(this.shake, 10); }
+      if (o.primary) {
+        if (n > 0) {
+          this.hitstop = Math.min(0.09, 0.03 + n * 0.012);
+          this.shake = Math.max(this.shake, 3 + n * 1.5);
+          if (n > this.stats.bestCombo) this.stats.bestCombo = n;
+          const gain = n * 10 * n;
+          this.stats.score += gain;
+          if (n >= 2) this.text(c.x, c.y - 10, n >= 6 ? '¡LAZO ×' + n + '!' : n >= 4 ? '¡Lazo ×' + n + '!' : 'Lazo ×' + n, n >= 6 ? '#ffd36e' : n >= 4 ? '#ffb0e0' : '#bfefff', n >= 4 ? 1.6 : 1.2);
+          this.ach('primer'); if (n >= 3) this.ach('triple'); if (n >= 6) this.ach('seis'); if (n >= 10) this.ach('diez');
+        }
+        this.events.push({ t: 'loop', n, solar: o.solar });
+      }
+      return { poly, cx: c.x, cy: c.y, r, area, hits };
+    }
+    updateEchoes(dt) {
+      for (const e of this.echoes) {
+        e.t -= dt;
+        if (e.t <= 0 && !e.done) {
+          e.done = true;
+          this.applyLoop(e.poly, e.area, { echo: true, solar: e.solar });
+          if (this.has('twin')) this.applyLoop(this.mirror(e.poly), e.area, { echo: true });
+          this.events.push({ t: 'echo' });
+        }
+      }
+      this.echoes = this.echoes.filter((e) => !e.done);
+    }
+    cutTrail(x, y) {
+      if (this.has('uncut')) return false;
+      const T = this.trail;
+      for (let i = T.length - 2; i >= 1; i--) {
+        if (L.segDist(x, y, T[i - 1].x, T[i - 1].y, T[i].x, T[i].y) < 10) {
+          const removed = T.slice(0, i);
+          this.trail = T.slice(i);
+          let l = 0; for (let k = 1; k < this.trail.length; k++) l += L.dist(this.trail[k - 1].x, this.trail[k - 1].y, this.trail[k].x, this.trail[k].y);
+          this.trailLenNow = l;
+          for (let k = 0; k < removed.length; k += 2) this.parts.push({ x: removed[k].x, y: removed[k].y, vx: this.rng.range(-40, 40), vy: this.rng.range(-40, 40), life: 0.6, t: 0, c: '#ff8a8a', s: 2 });
+          this.events.push({ t: 'cut' });
+          return true;
+        }
+      }
+      return false;
+    }
+
+    /* ---------------- daño ---------------- */
+    damage(e, d, how) {
+      if (e.spawn > 0 || e.dead) return;
+      e.hp -= d;
+      e.flash = 0.16;
+      this.text(e.x + this.rng.range(-8, 8), e.y - e.r - 6, '' + d, how === 'loop' ? '#ffffff' : '#ffd0a0', 0.8, true);
+      if (e.hp <= 0) this.kill(e, how);
+      else if (!e.boss) { const dd = Math.max(1, L.dist(e.x, e.y, this.p.x, this.p.y)); e.kx += ((e.x - this.p.x) / dd) * 120; e.ky += ((e.y - this.p.y) / dd) * 120; }
+    }
+    kill(e, how) {
+      if (e.dead) return;
+      e.dead = true;
+      this.stats.kills++;
+      this.lastKillT = this.roomT;
+      this.stats.score += e.boss ? 1000 : e.elite ? 60 : 15;
+      const E = L.ENEMIES[e.t];
+      this.burst(e.x, e.y, e.boss ? 80 : e.elite ? 30 : 16, E.eye, e.boss ? 420 : 260, 0.7, e.boss ? 4 : 2.5);
+      this.burst(e.x, e.y, 8, '#ffffff', 160, 0.4, 2);
+      this.events.push({ t: 'kill', boss: e.boss, elite: e.elite });
+      let pv = E.polen * (e.elite ? 3 : 1);
+      if (pv) this.dropPolen(e.x, e.y, pv);
+      if (e.elite && this.rng.chance(0.5)) this.pickups.push({ x: e.x, y: e.y, vx: 0, vy: -60, type: 'heart', v: 1, t: 0 });
+      else if (!e.boss && this.rng.chance(0.018)) this.pickups.push({ x: e.x, y: e.y, vx: 0, vy: -60, type: 'heart', v: 1, t: 0 });
+      if (e.t === 'gemelo') for (let i = 0; i < 2; i++) { const n = this.spawnEnemy('sombra', e.x + (i ? 14 : -14), e.y, { delay: 0 }); n.r *= 0.8; n.kx = (i ? 1 : -1) * 220; }
+      if (e.t === 'bombilla') this.explode(e.x, e.y, 135, 2, false);
+      if (how === 'loop' && this.has('nova') && !e.boss) this.shockwave(e.x, e.y, 95, 1, '#ff9ae0');
+      if (e.boss) this.bossDown(e);
+    }
+    explode(x, y, r, d, hurtsPlayer) {
+      this.shockwave(x, y, r, d, '#ffcc4a');
+      this.shake = Math.max(this.shake, 8);
+      if (hurtsPlayer && L.dist(x, y, this.p.x, this.p.y) < r * 0.7) this.hurt();
+      this.events.push({ t: 'boom' });
+    }
+    shockwave(x, y, r, d, color) {
+      this.rings.push({ x, y, r, t: 0, life: 0.45, c: color });
+      for (const e of this.enemies.slice()) if (!e.dead && e.spawn <= 0 && L.dist(e.x, e.y, x, y) < r + e.r * 0.5) { if (e.boss) continue; this.damage(e, d, 'wave'); }
+    }
+    ring(x, y, c, r, inward) { this.rings.push({ x, y, r, t: 0, life: 0.5, c, inward }); }
+    hurt() {
+      const p = this.p;
+      if (p.inv > 0 || p.dashT > 0 || this.cleared) return;
+      if (p.shield > 0) { p.shield = 0; p.inv = 0.8; this.ring(p.x, p.y, '#ffb0e0', 90); this.events.push({ t: 'shield' }); return; }
+      p.hearts -= 1;
+      this.stats.hurt++; this.roomHurt++;
+      const veil = this.has('veil');
+      p.inv = p.st.inv * (veil ? 2 : 1);
+      if (veil) this.slowT = 3;
+      this.shake = 14; this.hitstop = 0.12;
+      this.burst(p.x, p.y, 26, '#ff6a8a', 300, 0.6, 3);
+      this.events.push({ t: 'hurt' });
+      // empuje a las sombras cercanas
+      for (const e of this.enemies) { const d = L.dist(e.x, e.y, p.x, p.y); if (d < 160 && !e.boss) { e.kx += ((e.x - p.x) / (d || 1)) * 500; e.ky += ((e.y - p.y) / (d || 1)) * 500; } }
+      this.bullets = this.bullets.filter((b) => L.dist(b.x, b.y, p.x, p.y) > 120);
+      if (p.hearts <= 0) {
+        if (p.revive > 0) {
+          p.revive = 0; p.hearts = 2; p.inv = 2.5;
+          this.dones = this.dones.filter((d) => d.id !== 'fenix');
+          this.shockwave(p.x, p.y, 260, 3, '#ff9a3a');
+          this.text(p.x, p.y - 40, '¡Renaces!', '#ffb36a', 1.6);
+          this.events.push({ t: 'revive' });
+        } else {
+          this.phase = 'dead';
+          this.events.push({ t: 'dead' });
+        }
+      }
+    }
+    clearRoom() {
+      if (this.cleared) return;
+      this.cleared = true; this.clearT = 0; this.doneEmitted = false;
+      this.stats.rooms++;
+      this.bullets = [];
+      for (const k of this.pickups) k.pull = true;
+      for (const d of this.dones) { const D = L.DON[d.id]; if (D.onClear) D.onClear(this); }
+      if (this.roomType === 'elite' && this.roomHurt === 0) this.ach('intacta');
+      this.events.push({ t: 'clear' });
+    }
+    bossDown(e) {
+      this.enemies.forEach((x) => { if (x !== e && !x.dead) { x.dead = true; this.burst(x.x, x.y, 12, '#ffffff', 200, 0.5, 2); } });
+      this.bullets = [];
+      this.hitstop = 0.35; this.shake = 22;
+      this.slowT = 0;
+      if (this.floor === 0) this.ach('jefe1');
+      if (this.floor === 1) this.ach('jefe2');
+      this.clearRoom();
+      this.events.push({ t: 'bossDown' });
+    }
+    dropPolen(x, y, v) {
+      v = Math.round(v * this.p.st.polenMul);
+      while (v > 0) {
+        const piece = v >= 10 ? 5 : v >= 4 ? 2 : 1;
+        v -= piece;
+        const a = this.rng.range(0, TAU), s = this.rng.range(60, 200);
+        this.pickups.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, type: 'polen', v: piece, t: 0 });
+      }
+    }
+
+    /* ---------------- sombras ---------------- */
+    updateEnemies(dt, rdt) {
+      const p = this.p;
+      const toP = (e) => { const dx = p.x - e.x, dy = p.y - e.y, d = Math.hypot(dx, dy) || 1; return { dx: dx / d, dy: dy / d, d }; };
+      for (const e of this.enemies) {
+        if (e.dead) continue;
+        e.flash = Math.max(0, e.flash - rdt);
+        e.ihit = Math.max(0, e.ihit - rdt);
+        if (e.spawn > 0) { e.spawn -= rdt; continue; }
+        e.age += dt;
+        e.kx *= Math.pow(0.02, rdt); e.ky *= Math.pow(0.02, rdt);
+        if (e.frozen > 0) { e.frozen -= rdt; e.x += e.kx * rdt; e.y += e.ky * rdt; this.clampE(e); continue; }
+        let vx = 0, vy = 0;
+        const t = toP(e);
+        if (e.tired && !e.boss) { vx = t.dx * 40; vy = t.dy * 40; e.vx = vx; e.vy = vy; e.x += (vx + e.kx) * dt; e.y += (vy + e.ky) * dt; this.clampE(e); if (L.dist(e.x, e.y, p.x, p.y) < e.r * 0.8 + p.r * 0.5) this.hurt(); continue; }
+        switch (e.t) {
+          case 'sombra': case 'caparazon': case 'gemelo': vx = t.dx * e.speed; vy = t.dy * e.speed; break;
+          case 'polilla': { const s = Math.sin(e.age * 4 + e.ph) * 0.7; vx = (t.dx - t.dy * s) * e.speed; vy = (t.dy + t.dx * s) * e.speed; break; }
+          case 'enjambre': vx = (t.dx + Math.sin(e.age * 9 + e.ph) * 0.5) * e.speed; vy = (t.dy + Math.cos(e.age * 8 + e.ph) * 0.5) * e.speed; break;
+          case 'bombilla': vx = t.dx * e.speed; vy = t.dy * e.speed; break;
+          case 'saltarin': {
+            e.timer -= dt;
+            if (e.st === 0 && e.timer <= 0) { e.st = 1; e.timer = 0.38; e.jx = t.dx; e.jy = t.dy; }
+            else if (e.st === 1) { vx = e.jx * 430; vy = e.jy * 430; if (e.timer <= 0) { e.st = 0; e.timer = this.rng.range(0.9, 1.5); } }
+            else { vx = t.dx * 12; vy = t.dy * 12; }
+            break;
+          }
+          case 'escupidor': {
+            const want = t.d < 220 ? -1 : t.d > 320 ? 1 : 0;
+            vx = t.dx * e.speed * want + Math.cos(e.age + e.ph) * 30; vy = t.dy * e.speed * want + Math.sin(e.age + e.ph) * 30;
+            e.timer -= dt;
+            if (e.timer <= 0.5 && !e.tell) e.tell = true;
+            if (e.timer <= 0) { e.timer = 2.6; e.tell = false; this.shoot(e.x, e.y, Math.atan2(t.dy, t.dx), 200, e.elite ? 3 : 1, 0.22); }
+            break;
+          }
+          case 'tijereta': {
+            const T = this.trail;
+            if (t.d < 150) { vx = -t.dx * e.speed; vy = -t.dy * e.speed; }
+            else if (T.length > 6) {
+              const q = T[Math.floor(T.length * 0.45)];
+              const dx = q.x - e.x, dy = q.y - e.y, d = Math.hypot(dx, dy) || 1;
+              vx = (dx / d) * e.speed; vy = (dy / d) * e.speed;
+            } else { vx = Math.cos(e.age * 0.7 + e.ph) * e.speed * 0.5; vy = Math.sin(e.age * 0.9 + e.ph) * e.speed * 0.5; }
+            e.timer -= dt;
+            if (e.timer <= 0 && this.cutTrail(e.x, e.y)) { e.timer = 0.8; this.text(e.x, e.y - 20, '¡zas!', '#ff9a8a', 0.8); }
+            break;
+          }
+          case 'centinela': {
+            e.ang = (e.ang == null ? Math.atan2(e.y - p.y, e.x - p.x) : e.ang) + dt * 0.7;
+            const tx = p.x + Math.cos(e.ang) * 230, ty = p.y + Math.sin(e.ang) * 230;
+            const dx = tx - e.x, dy = ty - e.y, d = Math.hypot(dx, dy) || 1;
+            vx = (dx / d) * Math.min(e.speed * 1.4, d * 3); vy = (dy / d) * Math.min(e.speed * 1.4, d * 3);
+            e.timer -= dt;
+            if (e.timer <= 0.6) e.tell = true;
+            if (e.timer <= 0) { e.timer = 3.6; e.tell = false; this.ringShot(e.x, e.y, 8, 150, e.age); }
+            break;
+          }
+          case 'madre': this.bossMadre(e, dt, t, (a, b) => { vx = a; vy = b; }); break;
+          case 'ojo': this.bossOjo(e, dt, t, (a, b) => { vx = a; vy = b; }); break;
+          case 'reina': this.bossReina(e, dt, t, (a, b) => { vx = a; vy = b; }); break;
+        }
+        e.vx = vx; e.vy = vy;
+        e.x += (vx + e.kx) * dt; e.y += (vy + e.ky) * dt;
+        this.clampE(e);
+        // contacto con la luciérnaga
+        const pd = L.dist(e.x, e.y, p.x, p.y);
+        if (pd < e.r * 0.8 + p.r * 0.5) {
+          if (p.dashT > 0 && !e.boss) {
+            if (this.has('comet') && e.hp <= 1) { this.kill(e, 'dash'); continue; }
+            if (this.has('thorns') && !e.dashHit) { e.dashHit = 1; this.damage(e, 2, 'dash'); }
+          } else if (e.t === 'bombilla') { this.kill(e, 'touch'); this.explode(e.x, e.y, 100, 0, true); this.hurt(); }
+          else this.hurt();
+        }
+        // estela ardiente
+        if (this.has('burn') && !e.boss) {
+          e.burnT -= rdt;
+          if (e.burnT <= 0 && this.touchesTrail(e)) { e.burnT = 0.6; this.damage(e, 1, 'burn'); this.burst(e.x, e.y, 4, '#ff8a3a', 80, 0.4, 2); }
+        }
+        // hermanas
+        if (this.has('sister')) {
+          const n = this.donCount('hermana');
+          for (let k = 0; k < n; k++) {
+            const a = this.roomT * 3.2 + (k * TAU) / n;
+            const sx = p.x + Math.cos(a) * 46, sy = p.y + Math.sin(a) * 46;
+            if (L.dist(sx, sy, e.x, e.y) < e.r + 8 && !e.sisT) { e.sisT = 0.5; this.damage(e, 1, 'sister'); }
+          }
+          if (e.sisT) e.sisT = Math.max(0, e.sisT - rdt) || 0;
+        }
+      }
+      // separación
+      const es = this.enemies;
+      for (let i = 0; i < es.length; i++) for (let j = i + 1; j < es.length; j++) {
+        const a = es[i], b = es[j];
+        if (a.spawn > 0 || b.spawn > 0) continue;
+        const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy), m = (a.r + b.r) * 0.9;
+        if (d < m && d > 0.01) {
+          const push = (m - d) / 2, ux = dx / d, uy = dy / d;
+          const wa = a.boss ? 0 : 1, wb = b.boss ? 0 : 1;
+          a.x -= ux * push * wa; a.y -= uy * push * wa; b.x += ux * push * wb; b.y += uy * push * wb;
+        }
+      }
+      this.enemies = this.enemies.filter((e) => !e.dead);
+    }
+    touchesTrail(e) {
+      const T = this.trail;
+      for (let i = 1; i < T.length; i += 1) if (L.segDist(e.x, e.y, T[i - 1].x, T[i - 1].y, T[i].x, T[i].y) < e.r + 3) return true;
+      return false;
+    }
+    clampE(e) { const m = e.r * 0.6; e.x = L.clamp(e.x, m, this.W - m); e.y = L.clamp(e.y, m, this.H - m); }
+    shoot(x, y, a, sp, n = 1, spread = 0.2, r = 7) {
+      for (let i = 0; i < n; i++) {
+        const aa = a + (i - (n - 1) / 2) * spread;
+        this.bullets.push({ x, y, vx: Math.cos(aa) * sp, vy: Math.sin(aa) * sp, r, life: 6 });
+      }
+      this.events.push({ t: 'shoot' });
+    }
+    ringShot(x, y, n, sp, off = 0) { for (let i = 0; i < n; i++) { const a = off + (i * TAU) / n; this.bullets.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r: 7, life: 6 }); } this.events.push({ t: 'shoot' }); }
+
+    /* ---------------- jefes ---------------- */
+    bossMadre(e, dt, t, mv) {
+      const half = e.hp < e.maxHp * 0.5;
+      e.timer -= dt;
+      if (e.st === 0) { // revoloteo
+        const s = Math.sin(e.age * 2) * 0.8;
+        mv((t.dx - t.dy * s) * e.speed * 0.7, (t.dy + t.dx * s) * e.speed * 0.7);
+        if (e.timer <= 0) { e.st = 1; e.timer = 1.1; e.cx = t.dx; e.cy = t.dy; this.beams.push({ x: e.x, y: e.y, a: Math.atan2(t.dy, t.dx), t: 0, life: 1.1, w: e.r * 1.6, c: '#ffd36e' }); this.events.push({ t: 'tell' }); }
+      } else if (e.st === 1) { // aviso
+        mv(0, 0);
+        if (e.timer <= 0) { e.st = 2; e.timer = 1.1; }
+      } else if (e.st === 2) { // embestida
+        mv(e.cx * (half ? 640 : 540), e.cy * (half ? 640 : 540));
+        if (e.timer <= 0 || e.x <= e.r || e.x >= this.W - e.r || e.y <= e.r || e.y >= this.H - e.r) {
+          e.st = 3; e.timer = 0.6;
+          const n = half ? 4 : 3;
+          for (let i = 0; i < n; i++) { const a = (i / n) * TAU; this.spawnEnemy('polilla', e.x + Math.cos(a) * 70, e.y + Math.sin(a) * 70, { delay: 0.5 }); }
+          this.events.push({ t: 'summon' });
+        }
+      } else { mv(0, 0); if (e.timer <= 0) { e.st = 0; e.timer = half ? 2.4 : 3.4; } }
+    }
+    bossOjo(e, dt, t, mv) {
+      const half = e.hp < e.maxHp * 0.5;
+      e.timer -= dt;
+      e.shotT = (e.shotT == null ? 1.5 : e.shotT) - dt;
+      mv(Math.cos(e.age * 0.8) * 30, Math.sin(e.age * 1.1) * 30);
+      if (e.st === 0) {
+        if (e.shotT <= 0) {
+          e.shotT = half ? 1.6 : 2.2;
+          this.ringShot(e.x, e.y, half ? 14 : 11, 150, e.age);
+          if (half) this.shoot(e.x, e.y, Math.atan2(t.dy, t.dx), 230, 3, 0.18);
+        }
+        if (e.timer <= 0) { e.st = 1; e.timer = 0.7; e.fade = 1; this.events.push({ t: 'tell' }); }
+      } else if (e.st === 1) {
+        e.fade = e.timer / 0.7;
+        if (e.timer <= 0) {
+          const pos = this.spawnPos(260); e.x = pos.x; e.y = pos.y; e.st = 2; e.timer = 0.6;
+          if (this.enemies.length < 7) { const k = half ? 3 : 2; for (let i = 0; i < k; i++) this.spawnEnemy(this.rng.pick(['sombra', 'escupidor', 'polilla']), e.x + this.rng.range(-90, 90), e.y + this.rng.range(-90, 90), { delay: 0.7 }); }
+        }
+      } else { e.fade = 1 - e.timer / 0.6; if (e.timer <= 0) { e.st = 0; e.fade = 1; e.timer = half ? 4.5 : 6; } }
+    }
+    bossReina(e, dt, t, mv) {
+      const f = e.hp / e.maxHp;
+      const ph = f > 0.66 ? 1 : f > 0.33 ? 2 : 3;
+      if (ph !== e.phase) { e.phase = ph; e.st = 0; e.timer = 1.2; this.ring(e.x, e.y, '#ff5aa0', 300); this.shake = 12; this.text(e.x, e.y - 80, ph === 2 ? '¡La Reina se enfurece!' : '¡El eclipse total!', '#ff9ac8', 1.8); this.events.push({ t: 'phase' }); for (let i = 0; i < 6 + ph * 2; i++) this.bullets.push({ x: e.x, y: e.y, vx: Math.cos(i) * 200, vy: Math.sin(i) * 200, r: 8, life: 5 }); }
+      e.timer -= dt;
+      e.shotT = (e.shotT == null ? 2 : e.shotT) - dt;
+      e.sumT = (e.sumT == null ? 4 : e.sumT) - dt;
+      if (ph === 1) {
+        mv(t.dx * e.speed * 0.6, t.dy * e.speed * 0.6);
+        if (e.shotT <= 0) { e.shotT = 2.8; this.ringShot(e.x, e.y, 12, 150, e.age); }
+        if (e.sumT <= 0 && this.enemies.length < 12) { e.sumT = 6; const c = this.spawnPos(); for (let i = 0; i < 5; i++) this.spawnEnemy('enjambre', c.x + this.rng.range(-40, 40), c.y + this.rng.range(-40, 40), { delay: 0.8 }); }
+      } else if (ph === 2) {
+        const cx = this.W / 2 + Math.cos(e.age * 0.5) * this.W * 0.25, cy = this.H / 2 + Math.sin(e.age * 0.7) * this.H * 0.2;
+        mv((cx - e.x) * 1.2, (cy - e.y) * 1.2);
+        if (e.shotT <= 0) { e.shotT = 0.16; const a = e.age * 2.3; this.bullets.push({ x: e.x, y: e.y, vx: Math.cos(a) * 170, vy: Math.sin(a) * 170, r: 7, life: 5, cut: true }); this.bullets.push({ x: e.x, y: e.y, vx: -Math.cos(a) * 170, vy: -Math.sin(a) * 170, r: 7, life: 5, cut: true }); if (Math.floor(e.age * 6) % 3 === 0) this.events.push({ t: 'shoot' }); }
+        if (e.sumT <= 0 && this.enemies.length < 10) { e.sumT = 7; for (let i = 0; i < 2; i++) { const c = this.spawnPos(); this.spawnEnemy('tijereta', c.x, c.y, { delay: 0.8 }); } }
+      } else {
+        if (e.st === 0) { mv(t.dx * e.speed, t.dy * e.speed); if (e.timer <= 0) { e.st = 1; e.timer = 0.75; e.cx = t.dx; e.cy = t.dy; this.beams.push({ x: e.x, y: e.y, a: Math.atan2(t.dy, t.dx), t: 0, life: 0.75, w: e.r * 1.5, c: '#ff5aa0' }); this.events.push({ t: 'tell' }); } }
+        else if (e.st === 1) { mv(0, 0); if (e.timer <= 0) { e.st = 2; e.timer = 0.9; } }
+        else if (e.st === 2) { mv(e.cx * 680, e.cy * 680); if (e.timer <= 0 || e.x <= e.r || e.x >= this.W - e.r || e.y <= e.r || e.y >= this.H - e.r) { e.st = 0; e.timer = 1.8; this.ringShot(e.x, e.y, 16, 160, e.age); this.shake = 8; } }
+        if (e.sumT <= 0 && this.enemies.length < 10) { e.sumT = 6; const c = this.spawnPos(); this.spawnEnemy(this.rng.pick(['bombilla', 'centinela', 'gemelo']), c.x, c.y, { delay: 0.8 }); }
+      }
+    }
+
+    /* ---------------- balas, zonas, recogibles, efectos ---------------- */
+    updateBullets(dt) {
+      const p = this.p;
+      for (const b of this.bullets) {
+        b.x += b.vx * dt; b.y += b.vy * dt; b.life -= dt;
+        if (b.x < -20 || b.y < -20 || b.x > this.W + 20 || b.y > this.H + 20) b.life = 0;
+        if (b.life <= 0) continue;
+        if (L.dist(b.x, b.y, p.x, p.y) < b.r + p.r * 0.6) { b.life = 0; this.hurt(); continue; }
+        if (b.cut && this.trail.length > 3 && this.cutTrail(b.x, b.y)) { b.life = 0; this.burst(b.x, b.y, 6, '#ff9a9a', 120, 0.3, 2); }
+      }
+      this.bullets = this.bullets.filter((b) => b.life > 0);
+    }
+    updateZones(dt) {
+      for (const z of this.zones) {
+        z.t -= dt; z.tick -= dt;
+        if (z.tick <= 0) {
+          z.tick = 0.5;
+          for (const e of this.enemies.slice()) if (!e.boss && e.spawn <= 0 && L.dist(e.x, e.y, z.x, z.y) < z.r + e.r * 0.5) this.damage(e, z.dmg, 'zone');
+        }
+      }
+      this.zones = this.zones.filter((z) => z.t > 0);
+    }
+    updatePickups(dt) {
+      const p = this.p;
+      for (const k of this.pickups) {
+        k.t += dt;
+        const d = L.dist(k.x, k.y, p.x, p.y);
+        if (k.pull || d < p.st.magnet || (this.cleared && this.clearT > 0.3)) {
+          const sp = 380 + k.t * 300;
+          k.vx += ((p.x - k.x) / (d || 1)) * sp * dt * 6; k.vy += ((p.y - k.y) / (d || 1)) * sp * dt * 6;
+          const m = Math.hypot(k.vx, k.vy); if (m > sp) { k.vx *= sp / m; k.vy *= sp / m; }
+        } else { k.vx *= Math.pow(0.04, dt); k.vy *= Math.pow(0.04, dt); }
+        k.x += k.vx * dt; k.y += k.vy * dt;
+        k.x = L.clamp(k.x, 8, this.W - 8); k.y = L.clamp(k.y, 8, this.H - 8);
+        if (d < p.r + 9) {
+          k.got = true;
+          if (k.type === 'polen') { this.polen += k.v; this.stats.polen += k.v; this.events.push({ t: 'polen' }); }
+          else if (k.type === 'heart') { if (p.hearts < p.st.maxHearts) { this.heal(1); this.text(p.x, p.y - 26, '+1 ♥', '#ff8aa8'); } else { this.polen += 5; } }
+        }
+      }
+      this.pickups = this.pickups.filter((k) => !k.got && k.t < 30);
+    }
+    updateFx(dt) {
+      for (const q of this.parts) { q.t += dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vx *= Math.pow(0.15, dt); q.vy *= Math.pow(0.15, dt); }
+      this.parts = this.parts.filter((q) => q.t < q.life);
+      if (this.parts.length > 700) this.parts.splice(0, this.parts.length - 700);
+      for (const r of this.rings) r.t += dt;
+      this.rings = this.rings.filter((r) => r.t < r.life);
+      for (const f of this.flashes) f.t += dt;
+      this.flashes = this.flashes.filter((f) => f.t < f.life);
+      for (const t of this.texts) { t.t += dt; t.y -= dt * 34; }
+      this.texts = this.texts.filter((t) => t.t < t.life);
+      for (const b of this.beams) b.t += dt;
+      this.beams = this.beams.filter((b) => b.t < b.life);
+    }
+    burst(x, y, n, c, sp, life, s) {
+      for (let i = 0; i < n; i++) {
+        const a = this.rng.range(0, TAU), v = this.rng.range(sp * 0.25, sp);
+        this.parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: life * this.rng.range(0.6, 1.2), t: 0, c, s: s * this.rng.range(0.6, 1.3) });
+      }
+    }
+    text(x, y, s, c, life = 1, small) { this.texts.push({ x, y, s, c, t: 0, life, small }); }
+  }
+  L.World = World;
+})(globalThis.L = globalThis.L || {});
+
+</script>
+<script>
+/* LAZO — iconos de línea redondeados (rejilla 48×48) */
+(function (L) {
+  'use strict';
+  const F = 'fill="currentColor" stroke="none"';
+  const I = {
+    comet: `<circle cx="32" cy="16" r="7"/><path d="M27 21L8 40M31 23L18 36M25 17L14 26"/>`,
+    wing: `<path d="M8 38C10 22 22 10 42 8c-3 6-8 9-13 10 5 0 8 0 11-2-3 6-9 9-15 10 3 2 6 2 9 0-5 6-14 11-26 12z"/>`,
+    heart: `<path d="M24 40C10 31 6 24 6 17a9 9 0 0 1 18-3 9 9 0 0 1 18 3c0 7-4 14-18 23z"/>`,
+    magnet: `<path d="M12 8v14a12 12 0 0 0 24 0V8h-8v14a4 4 0 0 1-8 0V8z"/><path d="M12 14h8M28 14h8"/>`,
+    blade: `<path d="M24 6c8 8 12 18 12 26a12 12 0 0 1-24 0c0-8 4-18 12-26z"/><path d="M24 14v26"/>`,
+    spark: `<path d="M24 4l4 15 15 5-15 5-4 15-4-15-15-5 15-5z"/>`,
+    bolt: `<path d="M27 4L10 27h12l-3 17 17-23H24z"/>`,
+    drop: `<path d="M24 6c8 11 13 18 13 25a13 13 0 0 1-26 0c0-7 5-14 13-25z"/><path d="M18 31a6 6 0 0 0 6 6"/>`,
+    pouch: `<path d="M17 10c-2-2-1-5 3-5h8c4 0 5 3 3 5"/><path d="M17 10h14c7 6 10 13 10 19 0 9-7 13-17 13S7 38 7 29c0-6 3-13 10-19z"/><circle cx="24" cy="28" r="4"/>`,
+    thorn: `<path d="M6 40L40 8"/><path d="M14 32l-6-6M22 24l6 6M28 18l-6-6M34 12l6 6"/>`,
+    needle: `<path d="M38 6L10 38"/><ellipse cx="36" cy="9" rx="2" ry="4" transform="rotate(45 36 9)"/><path d="M36 9C26 9 16 16 14 26s6 16 14 14"/>`,
+    hug: `<circle cx="24" cy="24" r="16"/><circle cx="18" cy="22" r="3" ${F}/><circle cx="29" cy="20" r="3" ${F}/><circle cx="25" cy="29" r="3" ${F}/>`,
+    echo: `<circle cx="12" cy="24" r="4" ${F}/><path d="M20 15a12 12 0 0 1 0 18M27 9a20 20 0 0 1 0 30M34 4a27 27 0 0 1 0 40"/>`,
+    nova: `<circle cx="24" cy="24" r="6" ${F}/><path d="M24 4v8M24 36v8M4 24h8M36 24h8M10 10l6 6M32 32l6 6M10 38l6-6M32 16l6-6"/>`,
+    snow: `<path d="M24 4v40M7 14l34 20M7 34l34-20"/><path d="M20 8l4 4 4-4M20 40l4-4 4 4M7 20l5-1-1-5M41 28l-5 1 1 5M7 28l5 1-1 5M41 20l-5-1 1-5"/>`,
+    sister: `<circle cx="24" cy="24" r="6" ${F}/><circle cx="24" cy="24" r="15" stroke-dasharray="3 5"/><circle cx="37" cy="17" r="4" ${F}/>`,
+    shield: `<path d="M24 5l15 6c0 16-6 26-15 32C15 37 9 27 9 11z"/><path d="M18 24l5 5 8-10"/>`,
+    swirl: `<path d="M24 24c0-2 3-2 3 0 0 5-7 5-7 0 0-7 10-7 10 0 0 9-13 9-13 0 0-11 16-11 16 0 0 13-19 13-19 0 0-15 22-15 22 0"/>`,
+    flower: `<circle cx="24" cy="18" r="4" ${F}/><path d="M24 22v20M24 32c-4-4-10-4-12-1 3 3 9 4 12 1zM24 36c4-4 10-4 12-1-3 3-9 4-12 1z"/><path d="M24 8c3-3 7-2 7 2s-4 6-7 8c-3-2-7-4-7-8s4-5 7-2z"/>`,
+    chain: `<rect x="5" y="17" width="20" height="14" rx="7"/><rect x="23" y="17" width="20" height="14" rx="7"/>`,
+    flame: `<path d="M24 44c-9 0-15-6-15-14 0-9 9-14 9-23 6 4 8 9 8 14 3-1 5-4 5-8 4 4 8 10 8 17 0 8-6 14-15 14z"/><path d="M24 44c-4 0-7-3-7-7 0-4 4-7 6-11 4 3 8 7 8 11s-3 7-7 7z"/>`,
+    veil: `<path d="M24 5c-12 0-16 9-16 19 0 8 3 15 3 19 4-3 5-7 8-7s3 6 5 6 3-6 5-6 4 4 8 7c0-4 3-11 3-19 0-10-4-19-16-19z"/><circle cx="18" cy="21" r="2" ${F}/><circle cx="30" cy="21" r="2" ${F}/>`,
+    root: `<path d="M24 4v20M24 24c-6 4-10 10-12 18M24 24c6 4 10 10 12 18M24 24v20M17 31c-4 0-7 2-9 5M31 31c4 0 7 2 9 5"/>`,
+    coin: `<circle cx="24" cy="24" r="17"/><circle cx="24" cy="24" r="11"/><path d="M24 17v14M19 24h10"/>`,
+    sun: `<circle cx="24" cy="24" r="9"/><path d="M24 3v7M24 38v7M3 24h7M38 24h7M9 9l5 5M34 34l5 5M9 39l5-5M34 14l5-5"/>`,
+    phoenix: `<path d="M24 42c-3-4-3-8 0-12 3 4 3 8 0 12z" ${F}/><path d="M24 30c-8-1-15-8-18-19 6 4 10 4 13 3-3-4-3-9-1-12 4 4 6 9 6 12 0-3 2-8 6-12 2 3 2 8-1 12 3 1 7 1 13-3-3 11-10 18-18 19z"/>`,
+    hourglass: `<path d="M12 5h24M12 43h24M15 5c0 11 9 14 9 19s-9 8-9 19M33 5c0 11-9 14-9 19s9 8 9 19"/><path d="M19 37l5-5 5 5z" ${F}/>`,
+    infinity: `<path d="M24 24c-4-6-8-9-12-9a9 9 0 0 0 0 18c4 0 8-3 12-9s8-9 12-9a9 9 0 0 1 0 18c-4 0-8-3-12-9z"/>`,
+    stars: `<path d="M12 10l2 5 5 2-5 2-2 5-2-5-5-2 5-2zM34 20l2 5 5 2-5 2-2 5-2-5-5-2 5-2zM18 32l1.5 3.5 3.5 1.5-3.5 1.5L18 42l-1.5-3.5L13 37l3.5-1.5z" ${F}/><path d="M14 18l17 7M20 33l12-4" stroke-dasharray="2 4"/>`,
+    meteor: `<circle cx="33" cy="15" r="9" ${F}/><path d="M26 22L6 42M28 26L16 38M22 18L10 26"/>`,
+    gem: `<path d="M12 8h24l8 11-20 23L4 19z"/><path d="M4 19h40M18 8l-5 11 11 23 11-23-5-11"/>`,
+    twin: `<path d="M8 40c6-10 6-22 0-32M40 40c-6-10-6-22 0-32"/><circle cx="16" cy="24" r="4" ${F}/><circle cx="32" cy="24" r="4" ${F}/>`,
+    swords: `<path d="M8 8l22 22M40 8L18 30"/><path d="M26 34l8-8M14 26l8 8M30 38l8 2-2-8M18 38l-8 2 2-8"/>`,
+    skull: `<path d="M9 22c0-10 7-16 15-16s15 6 15 16c0 5-2 8-5 9v6H14v-6c-3-1-5-4-5-9z"/><circle cx="18" cy="22" r="4" ${F}/><circle cx="30" cy="22" r="4" ${F}/><path d="M20 37v4M24 37v4M28 37v4"/>`,
+    chest: `<path d="M6 20c0-7 8-12 18-12s18 5 18 12v20H6z"/><path d="M6 22h36M21 20h6v8h-6z"/>`,
+    lantern: `<path d="M24 4v5M18 9h12l-2 4h-8z"/><path d="M19 13c-5 8-5 18 0 26h10c5-8 5-18 0-26z"/><path d="M18 39h12v4H18z"/><path d="M24 20c-2 3-2 6 0 9 2-3 2-6 0-9z" ${F}/>`,
+    question: `<path d="M17 17a7 7 0 1 1 10 6c-2 1-3 3-3 5v3"/><circle cx="24" cy="38" r="2.5" ${F}/>`,
+    crown: `<path d="M7 36L5 13l10 9 9-14 9 14 10-9-2 23z"/><path d="M7 41h34"/>`,
+    pond: `<ellipse cx="24" cy="30" rx="19" ry="9"/><ellipse cx="24" cy="30" rx="10" ry="4"/><path d="M33 8l1.5 3.5L38 13l-3.5 1.5L33 18l-1.5-3.5L28 13l3.5-1.5z" ${F}/>`,
+    mushroom: `<path d="M6 24C6 13 14 6 24 6s18 7 18 18z"/><path d="M18 24v12a6 6 0 0 0 12 0V24"/><circle cx="17" cy="15" r="2.5" ${F}/><circle cx="29" cy="13" r="2" ${F}/><circle cx="32" cy="19" r="2" ${F}/>`,
+    altar: `<path d="M8 40h32M12 40V24h24v16M8 24h32M16 24v-6h16v6"/><path d="M24 4c3 4 3 7 0 10-3-3-3-6 0-10z" ${F}/>`,
+    tree: `<path d="M24 44V26M24 32l-6-5M24 29l6-6"/><path d="M24 4c9 0 15 6 15 13 4 3 3 10-3 11H12c-6-1-7-8-3-11 0-7 6-13 15-13z"/>`,
+    owl: `<path d="M10 14l5 4c3-2 6-3 9-3s6 1 9 3l5-4v20c0 7-6 10-14 10S10 41 10 34z"/><circle cx="18" cy="24" r="5"/><circle cx="30" cy="24" r="5"/><circle cx="18" cy="24" r="1.8" ${F}/><circle cx="30" cy="24" r="1.8" ${F}/><path d="M22 30l2 3 2-3z" ${F}/>`,
+    rain: `<path d="M12 22a8 8 0 0 1 3-15 11 11 0 0 1 21 2 7 7 0 0 1 1 13z"/><circle cx="15" cy="32" r="2.5" ${F}/><circle cx="26" cy="38" r="2.5" ${F}/><circle cx="34" cy="30" r="2.5" ${F}/>`,
+    mirror: `<ellipse cx="24" cy="19" rx="12" ry="14"/><path d="M24 33v10M18 43h12"/><path d="M19 13l6-4M18 20l10-7"/>`,
+    pause: `<path d="M17 12v24M31 12v24"/>`,
+    play: `<path d="M16 10l22 14-22 14z" ${F}/>`,
+    gear: `<circle cx="24" cy="24" r="6"/><path d="M24 4v6M24 38v6M4 24h6M38 24h6M10 10l4 4M34 34l4 4M10 38l4-4M34 14l4-4"/>`,
+    book: `<path d="M24 12c-5-4-12-4-18-3v29c6-1 13-1 18 3 5-4 12-4 18-3V9c-6-1-13-1-18 3zM24 12v29"/>`,
+    lock: `<rect x="11" y="21" width="26" height="20" rx="4"/><path d="M16 21v-6a8 8 0 0 1 16 0v6"/>`,
+    firefly: `<ellipse cx="24" cy="30" rx="7" ry="9" ${F}/><path d="M24 21c-6-8-15-8-17-4 2 5 10 7 17 4zM24 21c6-8 15-8 17-4-2 5-10 7-17 4z"/><circle cx="24" cy="15" r="4"/>`,
+  };
+  L.ICONS = I;
+  L.icon = (n, cls) => `<svg class="ico ${cls || ''}" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">${I[n] || I.spark}</svg>`;
+})(globalThis.L = globalThis.L || {});
+
+</script>
+<script>
+/* LAZO — sonido sintetizado: campanillas, efectos y música ambiental generativa */
+(function (L) {
+  'use strict';
+  const A = { vol: { sfx: 0.7, music: 0.5 } };
+  let ctx = null, master, sfx, mus, verb, lastT = {};
+  const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
+  const PENTA = [0, 2, 4, 7, 9];
+  const scale = (i, base) => base + PENTA[((i % 5) + 5) % 5] + 12 * Math.floor(i / 5);
+
+  A.init = function () {
+    if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    ctx = new AC();
+    master = ctx.createGain(); master.gain.value = 0.85;
+    const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -12; comp.ratio.value = 5;
+    master.connect(comp); comp.connect(ctx.destination);
+    sfx = ctx.createGain(); sfx.gain.value = A.vol.sfx; sfx.connect(master);
+    mus = ctx.createGain(); mus.gain.value = A.vol.music * 0.55; mus.connect(master);
+    const len = ctx.sampleRate * 3, buf = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let c = 0; c < 2; c++) { const d = buf.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.2); }
+    verb = ctx.createConvolver(); verb.buffer = buf;
+    const vg = ctx.createGain(); vg.gain.value = 0.35; verb.connect(vg); vg.connect(master);
+    startMusic();
+  };
+  A.setVolumes = (s, m) => { A.vol.sfx = s; A.vol.music = m; if (sfx) { sfx.gain.value = s; mus.gain.value = m * 0.55; } };
+  function out(dest, wet) { const g = ctx.createGain(); g.connect(dest || sfx); if (wet) { const w = ctx.createGain(); w.gain.value = wet; g.connect(w); w.connect(verb); } return g; }
+  function rate(k, ms) { const n = performance.now(); if (lastT[k] && n - lastT[k] < ms) return false; lastT[k] = n; return true; }
+
+  function bell(m, { vol = 0.2, when = 0, dur = 1.2, dest, wet = 0.45, bright = 3.5 } = {}) {
+    if (!ctx) return;
+    const t = ctx.currentTime + when, f = mtof(m);
+    const o = ctx.createOscillator(), mo = ctx.createOscillator(), mg = ctx.createGain();
+    o.frequency.value = f; mo.frequency.value = f * bright; mg.gain.setValueAtTime(f * 1.2, t); mg.gain.exponentialRampToValueAtTime(1, t + dur * 0.6);
+    mo.connect(mg); mg.connect(o.frequency);
+    const g = out(dest, wet);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); o.start(t); mo.start(t); o.stop(t + dur + 0.05); mo.stop(t + dur + 0.05);
+  }
+  function tone(f, { type = 'sine', vol = 0.2, a = 0.005, d = 0.3, when = 0, slide, dest, wet = 0.2 } = {}) {
+    if (!ctx) return;
+    const t = ctx.currentTime + when;
+    const o = ctx.createOscillator(); o.type = type; o.frequency.setValueAtTime(f, t);
+    if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + a + d);
+    const g = out(dest, wet);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + d);
+    o.connect(g); o.start(t); o.stop(t + a + d + 0.05);
+  }
+  function noise({ vol = 0.2, d = 0.2, f = 1200, q = 1, type = 'bandpass', sweep, when = 0, wet = 0.15 } = {}) {
+    if (!ctx) return;
+    const t = ctx.currentTime + when, len = Math.floor(ctx.sampleRate * d), b = ctx.createBuffer(1, len, ctx.sampleRate), dd = b.getChannelData(0);
+    for (let i = 0; i < len; i++) dd[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const s = ctx.createBufferSource(); s.buffer = b;
+    const fl = ctx.createBiquadFilter(); fl.type = type; fl.frequency.setValueAtTime(f, t); fl.Q.value = q; if (sweep) fl.frequency.exponentialRampToValueAtTime(sweep, t + d);
+    const g = out(null, wet); g.gain.value = vol; s.connect(fl); fl.connect(g); s.start(t);
+  }
+
+  let root = 72;
+  A.sfx = {
+    loop(n, solar) {
+      const base = root;
+      if (n === 0) { bell(scale(0, base), { vol: 0.08, dur: 0.6 }); return; }
+      const k = Math.min(n, 8);
+      for (let i = 0; i < k + 1; i++) bell(scale(i * 2, base), { vol: 0.16, when: i * 0.045, dur: 1.4 });
+      if (n >= 3) bell(scale(k * 2 + 2, base), { vol: 0.14, when: (k + 1) * 0.045, dur: 2.2, bright: 2 });
+      if (n >= 5) { tone(mtof(base - 24), { vol: 0.25, d: 1.2, wet: 0.4 }); for (let i = 0; i < 3; i++) bell(scale(10 + i * 2, base), { vol: 0.1, when: 0.4 + i * 0.07, dur: 2 }); }
+      if (solar) { tone(110, { type: 'sawtooth', vol: 0.08, d: 0.6, slide: 55, wet: 0.5 }); noise({ vol: 0.2, d: 0.6, f: 600, sweep: 3000 }); }
+    },
+    echo() { bell(scale(4, root + 12), { vol: 0.07, dur: 1.2, wet: 0.8 }); },
+    kill() { if (!rate('kill', 30)) return; tone(520 + Math.random() * 200, { type: 'triangle', vol: 0.09, d: 0.12, slide: 180 }); noise({ vol: 0.06, d: 0.1, f: 2500 }); },
+    bigkill() { tone(140, { vol: 0.3, d: 0.5, slide: 50, wet: 0.4 }); noise({ vol: 0.2, d: 0.5, f: 800, sweep: 120, type: 'lowpass' }); },
+    hurt() { tone(300, { type: 'square', vol: 0.12, d: 0.25, slide: 90, wet: 0.1 }); noise({ vol: 0.2, d: 0.25, f: 500, type: 'lowpass' }); },
+    dash() { noise({ vol: 0.12, d: 0.22, f: 900, sweep: 4000, q: 0.7 }); },
+    polen() { if (!rate('polen', 45)) return; bell(scale(Math.floor(Math.random() * 5) + 10, root), { vol: 0.035, dur: 0.35, wet: 0.2, bright: 2 }); },
+    shoot() { if (!rate('shoot', 70)) return; tone(700, { type: 'sine', vol: 0.05, d: 0.15, slide: 350 }); },
+    cut() { noise({ vol: 0.14, d: 0.08, f: 5000, q: 2 }); tone(1800, { type: 'triangle', vol: 0.05, d: 0.06, when: 0.04 }); },
+    boom() { tone(90, { vol: 0.3, d: 0.4, slide: 40, wet: 0.3 }); noise({ vol: 0.25, d: 0.4, f: 700, type: 'lowpass' }); },
+    wave() { bell(scale(0, root - 12), { vol: 0.08, dur: 1.5 }); bell(scale(2, root - 12), { vol: 0.06, when: 0.12, dur: 1.5 }); },
+    clear() { [0, 2, 4, 5, 7].forEach((s, i) => bell(scale(s + 3, root), { vol: 0.13, when: i * 0.09, dur: 1.8 })); tone(mtof(root - 24), { vol: 0.15, d: 1.5, wet: 0.5 }); },
+    heal() { [0, 2, 4].forEach((s, i) => bell(scale(s + 5, root), { vol: 0.1, when: i * 0.08, dur: 1.2 })); },
+    shield() { bell(scale(7, root), { vol: 0.12, dur: 1, bright: 1.5 }); noise({ vol: 0.1, d: 0.3, f: 3000 }); },
+    tell() { tone(220, { type: 'sawtooth', vol: 0.05, d: 0.6, slide: 440, wet: 0.3 }); },
+    summon() { [0, 1, 2].forEach((i) => tone(200 + i * 70, { type: 'triangle', vol: 0.05, d: 0.3, when: i * 0.08, wet: 0.4 })); },
+    phase() { tone(80, { type: 'sawtooth', vol: 0.12, d: 1.5, slide: 160, wet: 0.6 }); noise({ vol: 0.15, d: 1.2, f: 300, sweep: 2000 }); },
+    bossDown() { A.sfx.bigkill(); [0, 2, 4, 5, 7, 9, 12].forEach((s, i) => bell(scale(s, root), { vol: 0.14, when: 0.3 + i * 0.1, dur: 2.5 })); },
+    revive() { [0, 4, 7, 12, 16].forEach((s, i) => bell(root + s, { vol: 0.14, when: i * 0.07, dur: 2 })); },
+    dead() { [7, 4, 2, 0, -3].forEach((s, i) => bell(root + s - 12, { vol: 0.14, when: i * 0.22, dur: 2.2, bright: 1.4 })); },
+    click() { tone(900, { type: 'triangle', vol: 0.06, d: 0.05, wet: 0 }); },
+    hover() { if (!rate('hover', 60)) return; tone(1500, { vol: 0.02, d: 0.03, wet: 0 }); },
+    pick() { [0, 4, 7].forEach((s, i) => bell(root + s + 12, { vol: 0.12, when: i * 0.06, dur: 1.4 })); },
+    buy() { bell(root + 19, { vol: 0.12, dur: 0.8 }); bell(root + 24, { vol: 0.1, when: 0.07, dur: 1 }); },
+    error() { tone(160, { type: 'square', vol: 0.05, d: 0.15, wet: 0 }); },
+    ach() { [0, 4, 7, 11, 14].forEach((s, i) => bell(root + s, { vol: 0.1, when: i * 0.08, dur: 1.6 })); },
+    victory() { [0, 4, 7, 12, 16, 19, 24].forEach((s, i) => bell(root + s - 12, { vol: 0.16, when: i * 0.12, dur: 3 })); },
+  };
+
+  /* ---------- música ---------- */
+  const MOODS = {
+    menu: { root: 60, chords: [[0, 4, 7, 11], [-3, 0, 4, 7], [-7, -3, 0, 4], [-5, -1, 2, 7]], bpm: 64, dens: 0.35 },
+    bosque: { root: 62, chords: [[0, 4, 7, 11], [-3, 0, 4, 9], [-7, -3, 0, 4], [-5, 2, 4, 7]], bpm: 76, dens: 0.55 },
+    pantano: { root: 57, chords: [[0, 3, 7, 10], [-4, 0, 3, 7], [-7, -2, 3, 5], [-5, -2, 2, 5]], bpm: 70, dens: 0.5 },
+    eclipse: { root: 59, chords: [[0, 3, 7, 10], [-2, 2, 5, 9], [-4, 0, 3, 7], [-5, -1, 2, 5]], bpm: 82, dens: 0.6 },
+    boss: { root: 55, chords: [[0, 3, 7, 10], [1, 5, 8, 12], [-2, 2, 5, 8], [0, 3, 7, 11]], bpm: 108, dens: 0.8, pulse: true },
+    map: { root: 64, chords: [[0, 4, 7, 9], [-3, 0, 4, 7], [-5, -1, 2, 7], [-7, -3, 0, 4]], bpm: 60, dens: 0.3 },
+  };
+  let mood = 'menu', timer = null, next = 0, bar = 0;
+  A.setMood = (m) => { if (MOODS[m]) mood = m; root = (MOODS[m] || MOODS.menu).root + 12; };
+  function pad(notes, t, dur, M) {
+    for (const n of notes) {
+      const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = mtof(M.root + n);
+      const o2 = ctx.createOscillator(); o2.type = 'sine'; o2.frequency.value = mtof(M.root + n + 12) * 1.003;
+      const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.022, t + dur * 0.3); g.gain.linearRampToValueAtTime(0.0001, t + dur);
+      const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 1400;
+      o.connect(f); o2.connect(f); f.connect(g); g.connect(mus);
+      const w = ctx.createGain(); w.gain.value = 0.7; g.connect(w); w.connect(verb);
+      o.start(t); o2.start(t); o.stop(t + dur + 0.1); o2.stop(t + dur + 0.1);
+    }
+  }
+  function schedule() {
+    const M = MOODS[mood];
+    const beat = 60 / M.bpm, ch = M.chords[bar % M.chords.length], t0 = next;
+    pad(ch, t0, beat * 4.2, M);
+    bell(M.root - 12 + ch[0], { vol: 0.12, when: t0 - ctx.currentTime, dur: beat * 3, dest: mus, wet: 0.3, bright: 1 });
+    for (let s = 0; s < 8; s++) {
+      if (Math.random() > M.dens) continue;
+      const deg = Math.floor(Math.random() * 7) + 5;
+      bell(scale(deg, M.root) + (ch[0] % 12 === 0 ? 0 : 0), { vol: 0.045 + Math.random() * 0.03, when: t0 - ctx.currentTime + s * beat / 2, dur: 1.6, dest: mus, wet: 0.6 });
+    }
+    if (M.pulse) for (let s = 0; s < 4; s++) tone(mtof(M.root - 24 + ch[0]), { vol: 0.09, d: beat * 0.6, when: t0 - ctx.currentTime + s * beat, dest: mus, wet: 0.1 });
+    next += beat * 4; bar++;
+  }
+  function startMusic() {
+    next = ctx.currentTime + 0.3;
+    timer = setInterval(() => { if (!ctx || ctx.state !== 'running' || A.vol.music < 0.01) { if (ctx) next = Math.max(next, ctx.currentTime + 0.1); return; } while (next < ctx.currentTime + 1.5) schedule(); }, 300);
+  }
+  L.A = A;
+})(globalThis.L = globalThis.L || {});
+
+</script>
+<script>
+/* LAZO — dibujo en canvas: escenario, estela, lazos, sombras, jefes y efectos */
+(function (L) {
+  'use strict';
+  const TAU = Math.PI * 2;
+  const R = {};
+  let cv, cx, dpr = 1, S = 1, bgCache = null, bgKey = '', deco = [], decoKey = '', stars = [];
+  R.reduced = false;
+
+  R.init = function (canvas) { cv = canvas; cx = cv.getContext('2d'); };
+  R.resize = function (vw, vh, scale) {
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    S = scale;
+    cv.width = Math.floor(vw * dpr); cv.height = Math.floor(vh * dpr);
+    cv.style.width = vw + 'px'; cv.style.height = vh + 'px';
+    bgKey = '';
+  };
+  const hexA = (h, a) => { const n = parseInt(h.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; };
+  R.hexA = hexA;
+
+  function buildBg(w, B) {
+    const W = cv.width, H = cv.height;
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const g = c.getContext('2d');
+    const gr = g.createRadialGradient(W / 2, H * 0.45, 0, W / 2, H * 0.5, Math.max(W, H) * 0.75);
+    gr.addColorStop(0, B.bg[2]); gr.addColorStop(0.45, B.bg[1]); gr.addColorStop(1, B.bg[0]);
+    g.fillStyle = gr; g.fillRect(0, 0, W, H);
+    // textura suave de suelo
+    const rng = new L.RNG(L.hash(B.id));
+    for (let i = 0; i < 70; i++) {
+      const x = rng.range(0, W), y = rng.range(0, H), r = rng.range(40, 180) * dpr;
+      const rg = g.createRadialGradient(x, y, 0, x, y, r);
+      rg.addColorStop(0, hexA(B.fog, rng.range(0.02, 0.06))); rg.addColorStop(1, hexA(B.fog, 0));
+      g.fillStyle = rg; g.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+    // viñeta
+    const vg = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.max(W, H) * 0.72);
+    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.55)');
+    g.fillStyle = vg; g.fillRect(0, 0, W, H);
+    return c;
+  }
+  function buildDeco(w, B) {
+    const rng = new L.RNG(L.hash(B.id + (w.pos || 0) + w.floor));
+    deco = [];
+    const n = Math.floor((w.W * w.H) / 16000);
+    for (let i = 0; i < n; i++) {
+      deco.push({ x: rng.range(0, w.W), y: rng.range(0, w.H), k: rng.int(0, 3), s: rng.range(0.6, 1.4), ph: rng.range(0, TAU) });
+    }
+    stars = [];
+    for (let i = 0; i < 90; i++) stars.push({ x: rng.range(0, w.W), y: rng.range(0, w.H), s: rng.range(0.5, 1.8), ph: rng.range(0, TAU), sp: rng.range(0.3, 1.2) });
+  }
+  function drawFog(w, B, t) {
+    cx.save(); cx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 6; i++) {
+      const x = w.W * (0.5 + 0.45 * Math.sin(t * 0.05 * (i + 1) + i * 2.1)), y = w.H * (0.5 + 0.42 * Math.cos(t * 0.04 * (i + 2) + i));
+      const r = Math.max(w.W, w.H) * (0.22 + 0.06 * Math.sin(t * 0.2 + i));
+      const g = cx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, hexA(B.fog, 0.06)); g.addColorStop(1, hexA(B.fog, 0));
+      cx.fillStyle = g; cx.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+    cx.restore();
+  }
+  function drawDeco(w, B, t) {
+    drawFog(w, B, t);
+    cx.save();
+    for (const d of deco) {
+      const a = 0.35 + 0.25 * Math.sin(t * 0.8 + d.ph);
+      if (d.k === 0) { // brizna
+        cx.strokeStyle = hexA(B.fog, 0.18); cx.lineWidth = 1.5;
+        cx.beginPath(); cx.moveTo(d.x, d.y); cx.quadraticCurveTo(d.x + 4 * d.s, d.y - 10 * d.s, d.x + 2 * d.s + Math.sin(t + d.ph) * 2, d.y - 18 * d.s); cx.stroke();
+        cx.beginPath(); cx.moveTo(d.x + 3, d.y); cx.quadraticCurveTo(d.x - 3 * d.s, d.y - 8 * d.s, d.x - 5 * d.s + Math.sin(t + d.ph) * 2, d.y - 13 * d.s); cx.stroke();
+      } else if (d.k === 1) { // florecilla luminosa
+        cx.fillStyle = hexA(B.motes, a * 0.5);
+        for (let k = 0; k < 5; k++) { const an = (k / 5) * TAU + d.ph; cx.beginPath(); cx.arc(d.x + Math.cos(an) * 3.5 * d.s, d.y + Math.sin(an) * 3.5 * d.s, 2.2 * d.s, 0, TAU); cx.fill(); }
+        cx.fillStyle = hexA('#ffffff', a * 0.6); cx.beginPath(); cx.arc(d.x, d.y, 1.6 * d.s, 0, TAU); cx.fill();
+      } else if (d.k === 2) { // seta
+        cx.fillStyle = hexA(B.fog, 0.16); cx.fillRect(d.x - 1.5 * d.s, d.y - 6 * d.s, 3 * d.s, 6 * d.s);
+        cx.fillStyle = hexA(B.motes, a * 0.45); cx.beginPath(); cx.ellipse(d.x, d.y - 6 * d.s, 6 * d.s, 3.5 * d.s, 0, Math.PI, 0); cx.fill();
+      } else { // piedrecita
+        cx.fillStyle = 'rgba(0,0,0,0.18)'; cx.beginPath(); cx.ellipse(d.x, d.y, 7 * d.s, 4 * d.s, d.ph, 0, TAU); cx.fill();
+      }
+    }
+    for (const s of stars) {
+      const a = 0.25 + 0.35 * Math.sin(t * s.sp * 2 + s.ph);
+      cx.fillStyle = hexA(B.motes, Math.max(0, a));
+      const y = (s.y - t * 6 * s.sp) % w.H; const yy = y < 0 ? y + w.H : y;
+      cx.beginPath(); cx.arc(s.x + Math.sin(t * s.sp + s.ph) * 6, yy, s.s, 0, TAU); cx.fill();
+    }
+    cx.restore();
+  }
+
+  /* ---------------- sombras ---------------- */
+  function eyes(e, ang, sep, er, col, t) {
+    const look = 0.35;
+    for (const sgn of [-1, 1]) {
+      const ex = e.x + Math.cos(ang + sgn * 0.55) * sep * look * 1.4 + Math.cos(ang) * sep * 0.45;
+      const ey = e.y + Math.sin(ang + sgn * 0.55) * sep * look * 1.4 + Math.sin(ang) * sep * 0.45 - sep * 0.2;
+      const blink = Math.sin(t * 0.9 + e.ph * 3) > 0.985 ? 0.15 : 1;
+      cx.fillStyle = col;
+      cx.shadowColor = col; cx.shadowBlur = 8;
+      cx.beginPath(); cx.ellipse(ex, ey, er, er * 1.25 * blink, 0, 0, TAU); cx.fill();
+      cx.shadowBlur = 0;
+      cx.fillStyle = 'rgba(255,255,255,0.9)';
+      cx.beginPath(); cx.arc(ex - er * 0.3, ey - er * 0.35, er * 0.35, 0, TAU); cx.fill();
+    }
+  }
+  function blob(x, y, r, t, ph, wob, n = 9) {
+    cx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const a = (i / n) * TAU;
+      const rr = r * (1 + Math.sin(a * 3 + t * 3 + ph) * wob);
+      const px = x + Math.cos(a) * rr, py = y + Math.sin(a) * rr;
+      if (i === 0) cx.moveTo(px, py); else cx.quadraticCurveTo(x + Math.cos(a - Math.PI / n) * rr * 1.08, y + Math.sin(a - Math.PI / n) * rr * 1.08, px, py);
+    }
+    cx.closePath();
+  }
+  function bodyFill(e, E, extraGlow) {
+    const g = cx.createRadialGradient(e.x - e.r * 0.3, e.y - e.r * 0.4, e.r * 0.1, e.x, e.y, e.r * 1.2);
+    g.addColorStop(0, lighten(E.color, 0.25)); g.addColorStop(1, E.color);
+    cx.fillStyle = e.flash > 0 ? '#ffffff' : g;
+    cx.shadowColor = hexA(E.eye, 0.75); cx.shadowBlur = 16 + (extraGlow || 0);
+    cx.fill();
+    cx.shadowBlur = 0;
+    cx.strokeStyle = hexA(E.eye, 0.7); cx.lineWidth = 2; cx.stroke();
+  }
+  function lighten(hex, k) { const n = parseInt(hex.slice(1), 16); const f = (v) => Math.min(255, Math.round(v + (255 - v) * k)); return `rgb(${f(n >> 16)},${f((n >> 8) & 255)},${f(n & 255)})`; }
+
+  function drawEnemy(w, e, t) {
+    const E = L.ENEMIES[e.t];
+    const p = w.p;
+    const ang = Math.atan2(p.y - e.y, p.x - e.x);
+    if (e.spawn > 0) {
+      const k = 1 - e.spawn / 1.0;
+      cx.save();
+      cx.strokeStyle = hexA(E.eye, 0.7); cx.lineWidth = 2;
+      cx.setLineDash([6, 6]); cx.lineDashOffset = -t * 30;
+      cx.beginPath(); cx.arc(e.x, e.y, e.r * (1.6 - k * 0.6), 0, TAU); cx.stroke();
+      cx.setLineDash([]);
+      cx.fillStyle = hexA(E.color, Math.max(0, k) * 0.7);
+      cx.beginPath(); cx.arc(e.x, e.y, e.r * Math.max(0, k), 0, TAU); cx.fill();
+      cx.restore();
+      return;
+    }
+    cx.save();
+    if (e.elite) {
+      cx.strokeStyle = hexA('#ff5a7a', 0.5 + 0.3 * Math.sin(t * 6)); cx.lineWidth = 3;
+      cx.beginPath(); cx.arc(e.x, e.y, e.r + 8 + Math.sin(t * 4) * 2, 0, TAU); cx.stroke();
+    }
+    if (e.fade != null && e.fade < 1) cx.globalAlpha = Math.max(0.1, e.fade);
+    switch (e.t) {
+      case 'polilla': case 'madre': {
+        const big = e.t === 'madre';
+        const flap = Math.sin(t * (big ? 9 : 22) + e.ph);
+        const wr = e.r * (big ? 1.25 : 1.15);
+        const dir = Math.atan2(e.vy || 0.01, e.vx || 0.01);
+        cx.save();
+        cx.translate(e.x, e.y); cx.rotate(dir + Math.PI / 2);
+        for (const sg of [-1, 1]) {
+          cx.save(); cx.scale(sg, 1); cx.rotate(-0.25 + flap * 0.35);
+          cx.beginPath(); cx.ellipse(wr * 0.65, -wr * 0.15, wr * 0.75, wr * 0.48, -0.3, 0, TAU);
+          cx.fillStyle = e.flash > 0 ? '#fff' : E.color;
+          cx.shadowColor = hexA(E.eye, 0.5); cx.shadowBlur = 12; cx.fill(); cx.shadowBlur = 0;
+          cx.strokeStyle = hexA(E.eye, 0.5); cx.lineWidth = 1.3; cx.stroke();
+          cx.fillStyle = hexA(E.eye, 0.55); cx.beginPath(); cx.arc(wr * 0.7, -wr * 0.18, wr * 0.16, 0, TAU); cx.fill();
+          if (big) { cx.beginPath(); cx.ellipse(wr * 0.45, wr * 0.35, wr * 0.45, wr * 0.3, 0.4, 0, TAU); cx.fillStyle = e.flash > 0 ? '#fff' : E.color; cx.fill(); cx.stroke(); cx.fillStyle = hexA('#ff7ab0', 0.5); cx.beginPath(); cx.arc(wr * 0.5, wr * 0.38, wr * 0.1, 0, TAU); cx.fill(); }
+          cx.restore();
+        }
+        cx.beginPath(); cx.ellipse(0, 0, e.r * 0.42, e.r * 0.85, 0, 0, TAU);
+        cx.fillStyle = e.flash > 0 ? '#fff' : lighten(E.color, 0.12); cx.fill();
+        cx.strokeStyle = hexA(E.eye, 0.4); cx.stroke();
+        // antenas
+        cx.strokeStyle = hexA(E.eye, 0.6); cx.lineWidth = 1.2;
+        for (const sg of [-1, 1]) { cx.beginPath(); cx.moveTo(sg * e.r * 0.12, -e.r * 0.75); cx.quadraticCurveTo(sg * e.r * 0.5, -e.r * 1.3, sg * e.r * 0.6, -e.r * 1.25); cx.stroke(); }
+        cx.restore();
+        eyes({ x: e.x, y: e.y - e.r * 0.1, ph: e.ph }, ang, e.r * 0.5, e.r * 0.13, E.eye, t);
+        break;
+      }
+      case 'saltarin': {
+        const prep = e.st === 0 && e.timer < 0.35 ? (0.35 - e.timer) / 0.35 : 0;
+        const sx = e.st === 1 ? 0.85 : 1 + prep * 0.25, sy = e.st === 1 ? 1.2 : 1 - prep * 0.25;
+        cx.translate(e.x, e.y + e.r * (1 - sy)); cx.scale(sx, sy); cx.translate(-e.x, -e.y);
+        blob(e.x, e.y, e.r, t, e.ph, 0.04, 8); bodyFill(e, E);
+        cx.fillStyle = e.flash > 0 ? '#fff' : E.color;
+        for (const sg of [-1, 1]) { cx.beginPath(); cx.moveTo(e.x + sg * e.r * 0.3, e.y - e.r * 0.8); cx.lineTo(e.x + sg * e.r * 0.65, e.y - e.r * 1.45); cx.lineTo(e.x + sg * e.r * 0.75, e.y - e.r * 0.55); cx.fill(); }
+        eyes(e, ang, e.r * 0.55, e.r * 0.14, E.eye, t);
+        break;
+      }
+      case 'gemelo': {
+        blob(e.x - e.r * 0.35, e.y, e.r * 0.75, t, e.ph, 0.06); bodyFill(e, E);
+        blob(e.x + e.r * 0.35, e.y + 2, e.r * 0.75, t, e.ph + 2, 0.06); bodyFill(e, E);
+        eyes({ x: e.x - e.r * 0.35, y: e.y, ph: e.ph }, ang, e.r * 0.4, e.r * 0.1, E.eye, t);
+        eyes({ x: e.x + e.r * 0.35, y: e.y + 2, ph: e.ph + 1 }, ang, e.r * 0.4, e.r * 0.1, E.eye, t);
+        break;
+      }
+      case 'enjambre': {
+        cx.beginPath(); cx.arc(e.x, e.y, e.r, 0, TAU); bodyFill(e, E, -6);
+        const fl = Math.sin(t * 40 + e.ph) * 0.5;
+        cx.fillStyle = 'rgba(255,255,255,0.25)';
+        cx.beginPath(); cx.ellipse(e.x - e.r * 0.8, e.y - e.r * 0.6, e.r * 0.7, e.r * 0.35, -0.6 + fl, 0, TAU); cx.fill();
+        cx.beginPath(); cx.ellipse(e.x + e.r * 0.8, e.y - e.r * 0.6, e.r * 0.7, e.r * 0.35, 0.6 - fl, 0, TAU); cx.fill();
+        cx.fillStyle = E.eye; cx.beginPath(); cx.arc(e.x + Math.cos(ang) * e.r * 0.35, e.y + Math.sin(ang) * e.r * 0.35, e.r * 0.3, 0, TAU); cx.fill();
+        break;
+      }
+      case 'escupidor': {
+        blob(e.x, e.y, e.r, t, e.ph, 0.05); bodyFill(e, E, e.tell ? 10 : 0);
+        const mx = e.x + Math.cos(ang) * e.r * 0.95, my = e.y + Math.sin(ang) * e.r * 0.95;
+        cx.fillStyle = e.flash > 0 ? '#fff' : lighten(E.color, 0.2);
+        cx.beginPath(); cx.arc(mx, my, e.r * 0.42, 0, TAU); cx.fill(); cx.strokeStyle = hexA(E.eye, 0.7); cx.stroke();
+        cx.fillStyle = e.tell ? hexA(E.eye, 0.6 + 0.4 * Math.sin(t * 30)) : '#05060a';
+        cx.beginPath(); cx.arc(mx, my, e.r * 0.22, 0, TAU); cx.fill();
+        eyes({ x: e.x - Math.cos(ang) * e.r * 0.15, y: e.y - Math.sin(ang) * e.r * 0.15 - 3, ph: e.ph }, ang, e.r * 0.5, e.r * 0.12, E.eye, t);
+        break;
+      }
+      case 'tijereta': {
+        const dir = Math.atan2(e.vy || 0.01, e.vx || 0.01);
+        cx.translate(e.x, e.y); cx.rotate(dir);
+        const snip = Math.abs(Math.sin(t * 10 + e.ph)) * 0.5;
+        cx.fillStyle = e.flash > 0 ? '#fff' : E.color; cx.strokeStyle = hexA(E.eye, 0.6); cx.lineWidth = 1.5;
+        cx.beginPath(); cx.ellipse(-e.r * 0.2, 0, e.r * 1.05, e.r * 0.6, 0, 0, TAU); cx.shadowColor = hexA(E.eye, 0.5); cx.shadowBlur = 10; cx.fill(); cx.shadowBlur = 0; cx.stroke();
+        for (const sg of [-1, 1]) { cx.save(); cx.rotate(sg * (0.25 + snip)); cx.beginPath(); cx.moveTo(e.r * 0.6, 0); cx.quadraticCurveTo(e.r * 1.4, sg * e.r * 0.5, e.r * 1.9, sg * e.r * 0.05); cx.quadraticCurveTo(e.r * 1.3, sg * e.r * 0.15, e.r * 0.6, 0); cx.fillStyle = hexA(E.eye, 0.85); cx.fill(); cx.restore(); }
+        cx.fillStyle = E.eye; cx.beginPath(); cx.arc(e.r * 0.25, -e.r * 0.25, e.r * 0.14, 0, TAU); cx.arc(e.r * 0.25, e.r * 0.25, e.r * 0.14, 0, TAU); cx.fill();
+        break;
+      }
+      case 'bombilla': {
+        const pulse = 0.5 + 0.5 * Math.sin(t * 8 + e.ph);
+        blob(e.x, e.y, e.r, t, e.ph, 0.03); bodyFill(e, E, pulse * 10);
+        cx.strokeStyle = '#8a7a5a'; cx.lineWidth = 2; cx.beginPath(); cx.moveTo(e.x, e.y - e.r); cx.quadraticCurveTo(e.x + 6, e.y - e.r - 8, e.x + 3, e.y - e.r - 13); cx.stroke();
+        cx.fillStyle = hexA('#ffdd55', 0.6 + 0.4 * pulse); cx.shadowColor = '#ffcc33'; cx.shadowBlur = 14;
+        cx.beginPath(); cx.arc(e.x + 3, e.y - e.r - 14, 3 + pulse * 2, 0, TAU); cx.fill(); cx.shadowBlur = 0;
+        cx.fillStyle = hexA('#ffcc4a', 0.25 + pulse * 0.2); cx.beginPath(); cx.arc(e.x, e.y + 2, e.r * 0.5, 0, TAU); cx.fill();
+        eyes(e, ang, e.r * 0.5, e.r * 0.13, E.eye, t);
+        break;
+      }
+      case 'caparazon': {
+        cx.beginPath();
+        for (let i = 0; i < 6; i++) { const a = (i / 6) * TAU + t * 0.2; const px = e.x + Math.cos(a) * e.r, py = e.y + Math.sin(a) * e.r; i ? cx.lineTo(px, py) : cx.moveTo(px, py); }
+        cx.closePath(); bodyFill(e, E);
+        cx.strokeStyle = hexA(E.eye, 0.35); cx.lineWidth = 2;
+        cx.beginPath(); for (let i = 0; i < 6; i++) { const a = (i / 6) * TAU + t * 0.2; const px = e.x + Math.cos(a) * e.r * 0.55, py = e.y + Math.sin(a) * e.r * 0.55; i ? cx.lineTo(px, py) : cx.moveTo(px, py); } cx.closePath(); cx.stroke();
+        eyes(e, ang, e.r * 0.4, e.r * 0.11, E.eye, t);
+        break;
+      }
+      case 'centinela': {
+        cx.save(); cx.translate(e.x, e.y); cx.rotate(t * 1.5); cx.translate(-e.x, -e.y);
+        cx.beginPath(); cx.moveTo(e.x, e.y - e.r * 1.2); cx.lineTo(e.x + e.r * 0.9, e.y); cx.lineTo(e.x, e.y + e.r * 1.2); cx.lineTo(e.x - e.r * 0.9, e.y); cx.closePath();
+        bodyFill(e, E, e.tell ? 12 : 0);
+        cx.restore();
+        cx.strokeStyle = hexA(E.eye, e.tell ? 0.9 : 0.4); cx.lineWidth = 2;
+        cx.beginPath(); cx.arc(e.x, e.y, e.r * 1.6, t * 2, t * 2 + 4); cx.stroke();
+        cx.fillStyle = E.eye; cx.shadowColor = E.eye; cx.shadowBlur = 10; cx.beginPath(); cx.arc(e.x + Math.cos(ang) * 4, e.y + Math.sin(ang) * 4, e.r * 0.25, 0, TAU); cx.fill(); cx.shadowBlur = 0;
+        break;
+      }
+      case 'ojo': {
+        // tentáculos
+        cx.strokeStyle = hexA(E.eye, 0.35); cx.lineWidth = 4; cx.lineCap = 'round';
+        for (let i = 0; i < 8; i++) {
+          const a = (i / 8) * TAU + Math.sin(t + i) * 0.2;
+          cx.beginPath(); cx.moveTo(e.x + Math.cos(a) * e.r * 0.8, e.y + Math.sin(a) * e.r * 0.8);
+          cx.quadraticCurveTo(e.x + Math.cos(a + 0.4) * e.r * 1.5, e.y + Math.sin(a + 0.4) * e.r * 1.5, e.x + Math.cos(a + Math.sin(t * 2 + i) * 0.5) * e.r * 1.9, e.y + Math.sin(a + Math.sin(t * 2 + i) * 0.5) * e.r * 1.9);
+          cx.stroke();
+        }
+        blob(e.x, e.y, e.r, t, e.ph, 0.035, 10); bodyFill(e, E, 10);
+        cx.fillStyle = '#e8fff6'; cx.beginPath(); cx.ellipse(e.x, e.y, e.r * 0.72, e.r * 0.52, 0, 0, TAU); cx.fill();
+        const ix = e.x + Math.cos(ang) * e.r * 0.28, iy = e.y + Math.sin(ang) * e.r * 0.18;
+        const ig = cx.createRadialGradient(ix, iy, 2, ix, iy, e.r * 0.38); ig.addColorStop(0, '#ffffff'); ig.addColorStop(0.25, E.eye); ig.addColorStop(1, '#0a3a40');
+        cx.fillStyle = ig; cx.beginPath(); cx.arc(ix, iy, e.r * 0.36, 0, TAU); cx.fill();
+        cx.fillStyle = '#02060a'; cx.beginPath(); cx.ellipse(ix, iy, e.r * 0.08, e.r * 0.22, 0, 0, TAU); cx.fill();
+        // párpado
+        cx.fillStyle = e.flash > 0 ? '#fff' : E.color;
+        const lid = e.st === 1 ? 1 - (e.fade || 0) : Math.sin(t * 0.7) > 0.97 ? 0.8 : 0.05;
+        cx.beginPath(); cx.ellipse(e.x, e.y - e.r * 0.52 + lid * e.r * 0.52, e.r * 0.76, e.r * 0.52 * Math.max(0.05, lid), 0, Math.PI, TAU); cx.fill();
+        break;
+      }
+      case 'reina': {
+        const ph = e.phase || 1;
+        // corona solar
+        cx.save(); cx.translate(e.x, e.y); cx.rotate(t * (0.3 + ph * 0.2));
+        const spikes = 12;
+        cx.beginPath();
+        for (let i = 0; i < spikes * 2; i++) { const a = (i / (spikes * 2)) * TAU; const rr = i % 2 ? e.r * 1.15 : e.r * (1.55 + 0.1 * Math.sin(t * 4 + i)); i ? cx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr) : cx.moveTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+        cx.closePath();
+        const cg = cx.createRadialGradient(0, 0, e.r * 0.8, 0, 0, e.r * 1.7); cg.addColorStop(0, hexA('#ff5aa0', 0.9)); cg.addColorStop(1, hexA('#ffb36a', 0.2));
+        cx.fillStyle = cg; cx.shadowColor = '#ff5aa0'; cx.shadowBlur = 30; cx.fill(); cx.shadowBlur = 0;
+        cx.restore();
+        cx.beginPath(); cx.arc(e.x, e.y, e.r, 0, TAU); bodyFill(e, E, 10);
+        // corona
+        cx.fillStyle = '#ffd36e'; cx.beginPath();
+        const cy = e.y - e.r * 0.62;
+        cx.moveTo(e.x - e.r * 0.45, cy); cx.lineTo(e.x - e.r * 0.5, cy - e.r * 0.35); cx.lineTo(e.x - e.r * 0.22, cy - e.r * 0.15); cx.lineTo(e.x, cy - e.r * 0.45); cx.lineTo(e.x + e.r * 0.22, cy - e.r * 0.15); cx.lineTo(e.x + e.r * 0.5, cy - e.r * 0.35); cx.lineTo(e.x + e.r * 0.45, cy); cx.closePath(); cx.fill();
+        eyes({ x: e.x, y: e.y + e.r * 0.1, ph: e.ph }, ang, e.r * 0.5, e.r * 0.11, ph === 3 ? '#ffffff' : E.eye, t);
+        break;
+      }
+      default: { // sombra
+        const bob = Math.sin(t * 3 + e.ph) * 2;
+        cx.beginPath();
+        const r = e.r, x = e.x, y = e.y + bob;
+        cx.moveTo(x - r, y + r * 0.2);
+        cx.arc(x, y, r, Math.PI, 0);
+        for (let i = 0; i <= 4; i++) { const px = x + r - (i / 4) * r * 2; const py = y + r * 0.85 + (i % 2 ? -r * 0.2 : 0) + Math.sin(t * 6 + i + e.ph) * 2; cx.lineTo(px, py); }
+        cx.closePath();
+        bodyFill(e, E);
+        eyes({ x, y: y - 1, ph: e.ph }, ang, r * 0.55, r * 0.14, E.eye, t);
+      }
+    }
+    cx.restore();
+    if (e.frozen > 0) { cx.fillStyle = 'rgba(170,240,255,0.35)'; cx.strokeStyle = 'rgba(220,250,255,0.8)'; cx.lineWidth = 1.5; cx.beginPath(); cx.arc(e.x, e.y, e.r + 4, 0, TAU); cx.fill(); cx.stroke(); }
+    if (!e.boss && e.maxHp > 1) {
+      for (let i = 0; i < e.maxHp; i++) { cx.fillStyle = i < e.hp ? hexA(E.eye, 0.9) : 'rgba(255,255,255,0.15)'; cx.beginPath(); cx.arc(e.x + (i - (e.maxHp - 1) / 2) * 7, e.y + e.r + 9, 2.3, 0, TAU); cx.fill(); }
+    }
+  }
+
+  /* ---------------- luciérnaga ---------------- */
+  function drawPlayer(w, t, C) {
+    const p = w.p;
+    if (p.inv > 0 && !p.dashT && Math.floor(t * 18) % 2 === 0) return;
+    const sp = Math.hypot(p.vx, p.vy);
+    // halo
+    const hr = 95 + Math.sin(t * 3) * 8;
+    const g = cx.createRadialGradient(p.x, p.y, 0, p.x, p.y, hr);
+    g.addColorStop(0, hexA(C.glow, 0.55)); g.addColorStop(0.35, hexA(C.glow, 0.16)); g.addColorStop(1, hexA(C.glow, 0));
+    cx.globalCompositeOperation = 'lighter';
+    cx.fillStyle = g; cx.fillRect(p.x - hr, p.y - hr, hr * 2, hr * 2);
+    cx.globalCompositeOperation = 'source-over';
+    // alas
+    const flap = Math.sin(t * 38) * 0.6;
+    cx.save(); cx.translate(p.x, p.y); cx.rotate(p.face + Math.PI / 2); cx.scale(1.25, 1.25);
+    cx.fillStyle = 'rgba(230,245,255,0.55)'; cx.strokeStyle = 'rgba(255,255,255,0.7)'; cx.lineWidth = 1;
+    for (const sg of [-1, 1]) { cx.save(); cx.scale(sg, 1); cx.rotate(0.5 + flap); cx.beginPath(); cx.ellipse(9, -2, 10, 5, -0.4, 0, TAU); cx.fill(); cx.stroke(); cx.restore(); }
+    // cuerpo
+    cx.fillStyle = '#2a2230'; cx.beginPath(); cx.ellipse(0, -4, 5, 7, 0, 0, TAU); cx.fill();
+    const lg = cx.createRadialGradient(0, 5, 1, 0, 5, 11);
+    lg.addColorStop(0, '#ffffff'); lg.addColorStop(0.35, C.color); lg.addColorStop(1, hexA(C.glow, 0.9));
+    cx.fillStyle = lg; cx.shadowColor = C.glow; cx.shadowBlur = 20;
+    cx.beginPath(); cx.ellipse(0, 5, 8, 9.5, 0, 0, TAU); cx.fill(); cx.shadowBlur = 0;
+    cx.fillStyle = '#ffffff'; cx.beginPath(); cx.arc(-2, -7, 1.6, 0, TAU); cx.arc(2, -7, 1.6, 0, TAU); cx.fill();
+    cx.restore();
+    if (p.shield > 0) { cx.strokeStyle = hexA('#ffb0e0', 0.7 + 0.3 * Math.sin(t * 5)); cx.lineWidth = 2; cx.beginPath(); cx.arc(p.x, p.y, 22, 0, TAU); cx.stroke(); }
+    // hermanas
+    const n = w.donCount('hermana');
+    for (let k = 0; k < n; k++) {
+      const a = w.roomT * 3.2 + (k * TAU) / n;
+      const sx = p.x + Math.cos(a) * 46, sy = p.y + Math.sin(a) * 46;
+      const sg = cx.createRadialGradient(sx, sy, 0, sx, sy, 16); sg.addColorStop(0, '#ffffff'); sg.addColorStop(0.3, '#ffd0f0'); sg.addColorStop(1, 'rgba(255,150,220,0)');
+      cx.globalCompositeOperation = 'lighter'; cx.fillStyle = sg; cx.fillRect(sx - 16, sy - 16, 32, 32); cx.globalCompositeOperation = 'source-over';
+    }
+  }
+
+  /* ---------------- estela ---------------- */
+  function drawTrail(T, C, alphaMul) {
+    if (T.length < 2) return;
+    cx.save();
+    cx.globalCompositeOperation = 'lighter';
+    cx.lineCap = 'round'; cx.lineJoin = 'round';
+    const n = T.length;
+    for (let pass = 0; pass < 2; pass++) {
+      for (let i = 1; i < n; i++) {
+        const k = i / n;
+        cx.strokeStyle = pass === 0 ? hexA(C.glow, 0.10 * k * alphaMul) : hexA(pass ? C.color : C.glow, (0.15 + 0.85 * k) * alphaMul);
+        cx.lineWidth = pass === 0 ? 4 + 12 * k : 1 + 3 * k;
+        cx.beginPath(); cx.moveTo(T[i - 1].x, T[i - 1].y); cx.lineTo(T[i].x, T[i].y); cx.stroke();
+      }
+    }
+    cx.restore();
+  }
+
+  let viewSX = 0, viewSY = 0;
+  function applyView() { cx.setTransform(dpr * S, 0, 0, dpr * S, viewSX, viewSY); }
+
+  R.draw = function (w, t, opts = {}) {
+    const B = L.BIOMES[Math.min(2, w.floor)];
+    const C = L.CHARS.find((c) => c.id === w.charId) || L.CHARS[0];
+    const key = B.id + cv.width + 'x' + cv.height;
+    if (key !== bgKey) { bgCache = buildBg(w, B); bgKey = key; decoKey = ''; }
+    const dk = B.id + (w.pos || 0) + w.floor + w.W;
+    if (dk !== decoKey) { buildDeco(w, B); decoKey = dk; }
+    cx.setTransform(1, 0, 0, 1, 0, 0);
+    cx.drawImage(bgCache, 0, 0);
+    const sh = R.reduced ? 0 : w.shake;
+    viewSX = (Math.random() - 0.5) * sh * dpr; viewSY = (Math.random() - 0.5) * sh * dpr;
+    applyView();
+    drawDeco(w, B, t);
+    // zonas (flores)
+    for (const z of w.zones) {
+      const a = Math.min(1, z.t) * (0.6 + 0.2 * Math.sin(t * 6));
+      const g = cx.createRadialGradient(z.x, z.y, 0, z.x, z.y, z.r);
+      g.addColorStop(0, hexA('#ffd0f0', 0.35 * a)); g.addColorStop(1, hexA('#ff7ad0', 0));
+      cx.fillStyle = g; cx.beginPath(); cx.arc(z.x, z.y, z.r, 0, TAU); cx.fill();
+      cx.save(); cx.translate(z.x, z.y); cx.rotate(t);
+      cx.fillStyle = hexA('#ffe0f6', 0.8 * a);
+      for (let k = 0; k < 6; k++) { cx.rotate(TAU / 6); cx.beginPath(); cx.ellipse(0, -9, 4, 8, 0, 0, TAU); cx.fill(); }
+      cx.fillStyle = hexA('#ffd36e', a); cx.beginPath(); cx.arc(0, 0, 4, 0, TAU); cx.fill(); cx.restore();
+    }
+    // destellos de lazo
+    cx.save(); cx.globalCompositeOperation = 'lighter';
+    for (const f of w.flashes) {
+      const k = f.t / f.life;
+      const a = (1 - k) * (f.echo ? 0.45 : 0.75);
+      const c = L.polyCenter(f.poly);
+      const col = f.solar ? '#ffb030' : f.echo ? '#c9a0ff' : C.color;
+      let maxd = 10; for (const q of f.poly) maxd = Math.max(maxd, L.dist(q.x, q.y, c.x, c.y));
+      const g = cx.createRadialGradient(c.x, c.y, 0, c.x, c.y, maxd);
+      g.addColorStop(0, hexA(col, a * 0.15)); g.addColorStop(0.7, hexA(col, a * 0.35)); g.addColorStop(1, hexA(col, a * 0.6));
+      cx.fillStyle = g;
+      cx.beginPath(); f.poly.forEach((q, i) => (i ? cx.lineTo(q.x, q.y) : cx.moveTo(q.x, q.y))); cx.closePath(); cx.fill();
+      cx.strokeStyle = hexA('#ffffff', a); cx.lineWidth = 2 + 4 * (1 - k); cx.stroke();
+    }
+    cx.restore();
+    // recogibles
+    for (const k of w.pickups) {
+      if (k.type === 'polen') {
+        const s = 2.5 + k.v * 0.6;
+        const g = cx.createRadialGradient(k.x, k.y, 0, k.x, k.y, s * 4);
+        g.addColorStop(0, 'rgba(255,240,170,0.9)'); g.addColorStop(0.3, 'rgba(255,200,80,0.45)'); g.addColorStop(1, 'rgba(255,190,60,0)');
+        cx.fillStyle = g; cx.fillRect(k.x - s * 4, k.y - s * 4, s * 8, s * 8);
+        cx.fillStyle = '#fff6c8'; cx.beginPath(); cx.arc(k.x, k.y, s * 0.7, 0, TAU); cx.fill();
+      } else {
+        const s = 1 + Math.sin(t * 6) * 0.1;
+        heart(k.x, k.y, 9 * s, '#ff6a8a');
+      }
+    }
+    // avisos de embestida
+    for (const b of w.beams) {
+      const k = b.t / b.life;
+      cx.save(); cx.translate(b.x, b.y); cx.rotate(b.a);
+      cx.fillStyle = hexA(b.c, 0.08 + 0.18 * k);
+      cx.fillRect(0, -b.w / 2, 2000, b.w);
+      cx.strokeStyle = hexA(b.c, 0.3 + 0.5 * k); cx.setLineDash([12, 10]); cx.lineDashOffset = -t * 60; cx.lineWidth = 2;
+      cx.strokeRect(0, -b.w / 2, 2000, b.w); cx.setLineDash([]);
+      cx.restore();
+    }
+    // estela
+    drawTrail(w.trail, C, 1);
+    if (w.has('twin')) drawTrail(w.mirror(w.trail), { color: '#bfe8ff', glow: '#7ab8ff' }, 0.7);
+    // sombras
+    const es = w.enemies.slice().sort((a, b) => a.y - b.y);
+    for (const e of es) drawEnemy(w, e, t);
+    // balas
+    for (const b of w.bullets) {
+      const g = cx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r * 2.4);
+      g.addColorStop(0, '#ffffff'); g.addColorStop(0.35, b.cut ? '#ff4a4a' : '#ff7ad0'); g.addColorStop(1, b.cut ? 'rgba(200,30,30,0)' : 'rgba(160,40,140,0)');
+      cx.fillStyle = g; cx.beginPath(); cx.arc(b.x, b.y, b.r * 2.4, 0, TAU); cx.fill();
+    }
+    drawPlayer(w, t, C);
+    // partículas
+    cx.save(); cx.globalCompositeOperation = 'lighter';
+    for (const q of w.parts) {
+      const a = 1 - q.t / q.life;
+      cx.fillStyle = hexA(q.c.length === 7 ? q.c : '#ffffff', a);
+      cx.beginPath(); cx.arc(q.x, q.y, q.s * (0.5 + a * 0.5), 0, TAU); cx.fill();
+    }
+    cx.restore();
+    for (const r of w.rings) {
+      const k = r.t / r.life;
+      const rr = r.inward ? r.r * (1 - L.ease(k)) : r.r * L.ease(k);
+      cx.strokeStyle = hexA(r.c, (1 - k) * 0.9); cx.lineWidth = 2 + 6 * (1 - k);
+      cx.beginPath(); cx.arc(r.x, r.y, Math.max(1, rr), 0, TAU); cx.stroke();
+    }
+    // textos
+    cx.textAlign = 'center'; cx.textBaseline = 'middle';
+    for (const tx of w.texts) {
+      const k = tx.t / tx.life;
+      const pop = k < 0.15 ? 0.6 + (k / 0.15) * 0.6 : 1.2 - Math.min(0.2, (k - 0.15));
+      cx.globalAlpha = k > 0.7 ? (1 - k) / 0.3 : 1;
+      cx.font = `700 ${(tx.small ? 15 : 24) * pop}px Fredoka, system-ui, sans-serif`;
+      cx.lineWidth = tx.small ? 3 : 5; cx.strokeStyle = 'rgba(10,6,20,0.85)';
+      cx.strokeText(tx.s, tx.x, tx.y); cx.fillStyle = tx.c; cx.fillText(tx.s, tx.x, tx.y);
+      cx.globalAlpha = 1;
+    }
+    // ralentización
+    if (w.slowT > 0) { cx.setTransform(1, 0, 0, 1, 0, 0); cx.fillStyle = hexA('#9a8aff', Math.min(0.12, w.slowT * 0.08)); cx.fillRect(0, 0, cv.width, cv.height); }
+    // daño reciente
+    if (w.p.inv > w.p.st.inv - 0.35 && w.p.inv > 0 && !w.p.dashT) { cx.setTransform(1, 0, 0, 1, 0, 0); cx.fillStyle = 'rgba(255,40,80,0.12)'; cx.fillRect(0, 0, cv.width, cv.height); }
+    cx.setTransform(1, 0, 0, 1, 0, 0);
+  };
+  function heart(x, y, s, c) {
+    cx.save(); cx.translate(x, y); cx.scale(s / 10, s / 10);
+    cx.fillStyle = c; cx.shadowColor = c; cx.shadowBlur = 12;
+    cx.beginPath(); cx.moveTo(0, 4); cx.bezierCurveTo(-10, -4, -6, -12, 0, -6); cx.bezierCurveTo(6, -12, 10, -4, 0, 4); cx.fill();
+    cx.restore();
+  }
+  // fondo de menús: dibuja solo escenario y motas
+  R.drawIdle = function (w, t) {
+    const B = L.BIOMES[Math.min(2, w.floor)];
+    const key = B.id + cv.width + 'x' + cv.height;
+    if (key !== bgKey) { bgCache = buildBg(w, B); bgKey = key; decoKey = ''; }
+    const dk = B.id + (w.pos || 0) + w.floor + w.W;
+    if (dk !== decoKey) { buildDeco(w, B); decoKey = dk; }
+    cx.setTransform(1, 0, 0, 1, 0, 0); cx.drawImage(bgCache, 0, 0);
+    viewSX = viewSY = 0; applyView(); drawDeco(w, B, t);
+    cx.setTransform(1, 0, 0, 1, 0, 0);
+  };
+  L.R = R;
+})(globalThis.L = globalThis.L || {});
+
+</script>
+<script>
+/* LAZO — pantallas y menús (DOM) */
+(function (L) {
+  'use strict';
+  const U = {};
+  const $ = (id) => document.getElementById(id);
+  const scr = () => $('screen');
+  const snd = (k) => L.A.sfx[k] && L.A.sfx[k]();
+
+  U.show = function (html, dim = true) {
+    const s = scr();
+    s.className = 'show' + (dim ? ' dim' : '');
+    s.innerHTML = html;
+    s.scrollTop = 0;
+    U.hideTip();
+    s.querySelectorAll('button, .card, .opt, .char, .tab').forEach((el) => el.addEventListener('pointerenter', () => snd('hover')));
+    return s;
+  };
+  U.hide = function () { const s = scr(); s.className = ''; s.innerHTML = ''; U.hideTip(); };
+  U.on = (sel, ev, fn) => scr().querySelectorAll(sel).forEach((el) => el.addEventListener(ev, (e) => fn(el, e)));
+  U.toast = function (html) { const t = document.createElement('div'); t.className = 'toast'; t.innerHTML = html; $('toasts').appendChild(t); setTimeout(() => t.remove(), 3500); };
+  U.banner = function (title, sub, color) {
+    const b = document.createElement('div'); b.className = 'big-banner'; b.style.setProperty('--bc', color || '#ffd76a');
+    b.innerHTML = `<b>${title}</b>${sub ? `<span>${sub}</span>` : ''}`;
+    document.body.appendChild(b); setTimeout(() => b.remove(), 2300);
+  };
+  U.tip = function (html, x, y) { const t = $('tip'); t.innerHTML = html; t.classList.add('show'); const w = t.offsetWidth, h = t.offsetHeight; t.style.left = L.clamp(x - w / 2, 6, innerWidth - w - 6) + 'px'; t.style.top = (y - h - 12 < 6 ? y + 24 : y - h - 12) + 'px'; };
+  U.hideTip = () => $('tip').classList.remove('show');
+  document.addEventListener('pointerover', (e) => {
+    const el = e.target.closest && e.target.closest('[data-don]');
+    if (!el) return;
+    const d = L.DON[el.dataset.don]; const r = el.getBoundingClientRect();
+    U.tip(`<b style="color:${L.RARITY[d.r].color}">${d.name}</b>${d.desc}`, r.left + r.width / 2, r.top);
+  });
+  document.addEventListener('pointerout', (e) => { if (e.target.closest && e.target.closest('[data-don]')) U.hideTip(); });
+
+  const heartSVG = (cls) => `<div class="hrt ${cls || ''}">${L.icon('heart').replace('fill="none"', 'fill="currentColor"')}</div>`;
+  U.heartSVG = heartSVG;
+  U.donCard = function (d, extra = '') {
+    const R = L.RARITY[d.r];
+    return `<div class="card" data-id="${d.id}" style="--rc:${R.color}"><div class="ic">${L.icon(d.icon)}</div><div class="txt"><div class="rar">${R.name}</div><h3>${d.name}</h3><p>${d.desc}</p>${extra}</div></div>`;
+  };
+  U.donRow = function (w) {
+    const counts = {};
+    for (const d of w.dones) counts[d.id] = (counts[d.id] || 0) + 1;
+    return `<div class="donrow">${Object.keys(counts).map((id) => { const d = L.DON[id]; return `<div class="dmini" data-don="${id}" style="--rc:${L.RARITY[d.r].color}">${L.icon(d.icon)}${counts[id] > 1 ? `<i>×${counts[id]}</i>` : ''}</div>`; }).join('')}</div>`;
+  };
+  U.runBar = function (w) {
+    let hs = '';
+    for (let i = 0; i < w.p.st.maxHearts; i++) hs += heartSVG(i < w.p.hearts ? '' : 'empty');
+    return `<div class="runbar"><div class="hs">${hs}</div><div id="polen" style="font-size:16px"><span class="pdot"></span><b>${w.polen}</b></div>${w.dones.length ? U.donRow(w) : '<span style="color:var(--muted);font-size:14px">Aún sin dones</span>'}</div>`;
+  };
+
+  /* ---------------- menú principal ---------------- */
+  U.menu = function (hasRun, cb) {
+    U.show(`<div class="menu">
+      <div class="title">Lazo</div>
+      <div class="tagline">Una luciérnaga contra la noche</div>
+      <div class="btns">
+        ${hasRun ? '<button class="btn" data-a="continue">Continuar</button>' : ''}
+        <button class="btn ${hasRun ? 'sky' : ''}" data-a="new">${hasRun ? 'Nueva partida' : 'Jugar'}</button>
+        <button class="btn alt" data-a="how">Cómo se juega</button>
+        <button class="btn alt" data-a="codex">Diario de la noche</button>
+        <button class="btn alt" data-a="opts">Opciones</button>
+      </div></div><div class="foot">Lazo · un juego original · v1.0</div>`, false);
+    U.on('[data-a]', 'click', (el) => { L.A.init(); snd('click'); cb(el.dataset.a); });
+  };
+
+  /* ---------------- elegir luciérnaga ---------------- */
+  U.charSelect = function (meta, cb, back) {
+    let sel = meta.lastChar && meta.unlocked(meta.lastChar) ? meta.lastChar : 'lumi';
+    let moon = Math.min(meta.d.lastMoon || 0, meta.d.maxMoon);
+    const draw = () => {
+      U.show(`<div class="box"><h2>Elige tu luciérnaga</h2><div class="sub">Cada una brilla a su manera</div>
+        <div class="chars">${L.CHARS.map((c) => { const un = meta.unlocked(c.id); return `<div class="char ${c.id === sel ? 'on' : ''} ${un ? '' : 'locked'}" data-c="${c.id}" style="--cc:${c.color}"><div class="fly">${L.icon(un ? 'firefly' : 'lock')}</div><b>${un ? c.name : '???'}</b></div>`; }).join('')}</div>
+        <div class="chardesc">${(() => { const c = L.CHARS.find((x) => x.id === sel); return meta.unlocked(c.id) ? c.desc : '🔒 ' + c.unlock.text; })()}</div>
+        <div class="moons">${L.MOONS.map((m, i) => `<div class="moon ${i === moon ? 'on' : ''} ${i > meta.d.maxMoon ? 'locked' : ''}" data-m="${i}" style="--mx:${Math.round(100 - i * 20)}%" title="${m.name}"></div>`).join('')}</div>
+        <div class="moondesc"><b>${L.MOONS[moon].name}</b> · ${L.MOONS[moon].desc}${moon > 0 ? ' (y las anteriores)' : ''}</div>
+        <div class="row"><button class="btn alt" data-a="back">Volver</button><button class="btn" data-a="go" ${meta.unlocked(sel) ? '' : 'disabled'}>¡A volar!</button></div></div>`);
+      U.on('[data-c]', 'click', (el) => { sel = el.dataset.c; snd('click'); draw(); });
+      U.on('[data-m]', 'click', (el) => { const m = +el.dataset.m; if (m <= meta.d.maxMoon) { moon = m; snd('click'); draw(); } else { snd('error'); U.toast('Gana una partida en ' + L.MOONS[m - 1].name + ' para desbloquearla'); } });
+      U.on('[data-a=back]', 'click', () => { snd('click'); back(); });
+      U.on('[data-a=go]', 'click', () => { snd('pick'); cb(sel, moon); });
+    };
+    draw();
+  };
+
+  /* ---------------- mapa ---------------- */
+  U.map = function (w, cb, menu) {
+    const B = w.biome();
+    const nodes = w.map.nodes;
+    const av = new Set(w.available());
+    const visited = new Set(w.visited || []);
+    const VW = 400, rowH = 74, VH = (w.map.layers) * rowH + 40;
+    const nx = (n) => 30 + n.x * (VW - 60);
+    const ny = (n) => VH - 40 - n.l * rowH;
+    let edges = '';
+    for (const n of nodes) for (const m of n.next) {
+      const a = nodes[m];
+      const lit = (w.pos === n.id && av.has(m)) || (visited.has(n.id) && visited.has(m));
+      edges += `<line x1="${nx(n)}" y1="${ny(n)}" x2="${nx(a)}" y2="${ny(a)}" stroke="${lit ? '#ffe7a0' : 'rgba(255,255,255,.22)'}" stroke-width="${lit ? 3 : 2}" stroke-dasharray="${lit ? '' : '2 7'}" stroke-linecap="round"/>`;
+    }
+    let ns = '';
+    for (const n of nodes) {
+      const T = L.NODE_TYPES[n.type];
+      const isAv = av.has(n.id), isCur = w.pos === n.id, isDone = visited.has(n.id);
+      const r = n.type === 'boss' ? 28 : 20;
+      const cls = isAv ? 'avail' : isDone || isCur ? 'done' : 'dimmed';
+      ns += `<g class="mapnode ${cls}" data-n="${n.id}" transform="translate(${nx(n)} ${ny(n)})">
+        <circle class="halo" r="${r + 9}" fill="none" stroke="${T.color}" stroke-width="2"/>
+        <circle r="${r}" fill="${isCur ? '#ffe7a0' : 'rgba(10,10,30,.85)'}" stroke="${T.color}" stroke-width="${isAv ? 3 : 2}"/>
+        <g transform="translate(${-r * 0.6} ${-r * 0.6}) scale(${(r * 1.2) / 48})" style="color:${isCur ? '#1a1030' : T.color}" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">${L.ICONS[T.icon]}</g>
+      </g>`;
+    }
+    U.show(`<div class="mapwrap">
+      <div class="maphead"><h2 style="color:${B.motes}">${B.name}</h2><div class="sub">${B.sub} · elige tu camino</div></div>
+      ${U.runBar(w)}
+      <svg class="mapsvg" viewBox="0 0 ${VW} ${VH}">${edges}${ns}</svg>
+      <div class="row" style="margin-top:4px"><button class="btn alt small" data-a="menu">${L.icon('pause').replace('class="ico ', 'style="width:16px;height:16px;display:inline-block;vertical-align:-3px" class="ico ')} Menú</button></div>
+    </div>`, true);
+    const s = scr();
+    s.querySelectorAll('.mapnode').forEach((g) => {
+      const n = nodes[+g.dataset.n]; const T = L.NODE_TYPES[n.type];
+      g.addEventListener('pointerenter', () => { const r = g.getBoundingClientRect(); U.tip(`<b style="color:${T.color}">${T.name}</b>${T.desc}`, r.left + r.width / 2, r.top); if (av.has(n.id)) snd('hover'); });
+      g.addEventListener('pointerleave', U.hideTip);
+      g.addEventListener('click', () => { if (av.has(n.id)) { snd('pick'); U.hideTip(); cb(n.id); } else snd('error'); });
+    });
+    U.on('[data-a=menu]', 'click', () => { snd('click'); menu(); });
+  };
+
+  /* ---------------- recompensa ---------------- */
+  U.reward = function (w, title, sub, choices, cb, skipPolen = 10) {
+    U.show(`<div class="box" style="width:min(720px,100%)"><h2>${title}</h2><div class="sub">${sub}</div>
+      <div class="cards">${choices.map((d) => U.donCard(d, w.donCount(d.id) ? `<div class="own">Tienes ${w.donCount(d.id)}</div>` : '')).join('')}</div>
+      <div class="row"><button class="btn alt small" data-a="skip">Dejarlo (+${skipPolen} de polen)</button></div></div>`);
+    U.on('.card', 'click', (el) => { snd('pick'); cb(el.dataset.id); });
+    U.on('[data-a=skip]', 'click', () => { snd('click'); cb(null); });
+  };
+
+  /* ---------------- mercado ---------------- */
+  U.shop = function (w, stock, cb) {
+    const price = (it) => it.price;
+    const draw = () => {
+      U.show(`<div class="box" style="width:min(860px,100%)"><h2>Mercado de la Noche</h2><div class="sub">Una polilla mercader extiende su manta de tesoros</div>
+        ${U.runBar(w)}
+        <div class="cards" style="margin-top:16px">${stock.items.map((it, i) => {
+          if (it.kind === 'don') { const d = L.DON[it.id]; return U.donCard(d, `<div class="price"><span class="pdot"></span>${it.price}</div>`).replace('class="card"', `class="card ${it.sold ? 'sold' : ''} ${w.polen < it.price ? 'cant' : ''}" data-i="${i}"`); }
+          const ic = it.kind === 'heal' ? 'heart' : it.kind === 'max' ? 'heart' : 'swirl';
+          const nm = it.kind === 'heal' ? 'Néctar' : it.kind === 'max' ? 'Corazón de Luz' : '';
+          const ds = it.kind === 'heal' ? 'Cura 1 corazón.' : 'Ganas 1 corazón máximo.';
+          return `<div class="card ${it.sold ? 'sold' : ''} ${w.polen < it.price ? 'cant' : ''}" data-i="${i}" style="--rc:#ff8ac8"><div class="ic">${L.icon(ic)}</div><div class="txt"><div class="rar">Remedio</div><h3>${nm}</h3><p>${ds}</p><div class="price"><span class="pdot"></span>${it.price}</div></div></div>`;
+        }).join('')}</div>
+        <div class="row"><button class="btn alt small" data-a="reroll" ${w.polen < stock.reroll ? 'disabled' : ''}>Renovar (${stock.reroll})</button><button class="btn" data-a="leave">Seguir el camino</button></div></div>`);
+      U.on('[data-i]', 'click', (el) => {
+        const it = stock.items[+el.dataset.i];
+        if (it.sold) return;
+        if (w.polen < it.price) { snd('error'); U.toast('No tienes suficiente polen'); return; }
+        if (it.kind === 'heal' && w.p.hearts >= w.p.st.maxHearts) { snd('error'); U.toast('Ya tienes todos los corazones'); return; }
+        w.polen -= it.price; it.sold = true; snd('buy');
+        if (it.kind === 'don') w.addDon(it.id); else if (it.kind === 'heal') w.heal(1); else { w.p.bonusHearts++; w.recalc(); w.heal(1); }
+        cb('buy'); draw();
+      });
+      U.on('[data-a=reroll]', 'click', () => { if (w.polen < stock.reroll) return; w.polen -= stock.reroll; stock.reroll += 5; cb('reroll'); snd('buy'); draw(); });
+      U.on('[data-a=leave]', 'click', () => { snd('click'); cb('leave'); });
+    };
+    draw();
+  };
+
+  /* ---------------- manantial ---------------- */
+  U.fountain = function (w, cb) {
+    U.show(`<div class="box event" style="width:min(560px,100%)"><div class="eic" style="color:#ffb0d8">${L.icon('drop')}</div><h2>El Manantial</h2>
+      <p class="txt">Agua tibia que brilla como la luna. Un buen sitio para recuperar el aliento.</p>${U.runBar(w)}
+      <div class="opts" style="margin-top:14px">
+        <div class="opt" data-o="heal"><b>Descansar</b><span>Recuperas todos tus corazones.</span></div>
+        <div class="opt" data-o="max"><b>Meditar</b><span>Ganas 1 corazón máximo (sin curarte).</span></div>
+      </div></div>`);
+    U.on('[data-o]', 'click', (el) => { snd('pick'); cb(el.dataset.o); });
+  };
+
+  /* ---------------- evento ---------------- */
+  U.event = function (w, E, cb) {
+    U.show(`<div class="box event" style="width:min(600px,100%)"><div class="eic">${L.icon(E.icon)}</div><h2>${E.title}</h2><p class="txt">${E.text}</p>${U.runBar(w)}
+      <div class="opts" style="margin-top:14px">${E.opts.map((o, i) => { const ok = (!o.can || o.can(w)) && (!o.cost || w.polen >= o.cost); return `<div class="opt ${ok ? '' : 'no'}" data-o="${i}"><b>${o.t}</b>${o.d ? `<span>${o.d}</span>` : ''}</div>`; }).join('')}</div></div>`);
+    U.on('[data-o]', 'click', (el) => { snd('pick'); cb(+el.dataset.o); });
+  };
+  U.eventResult = function (w, E, text, cb) {
+    U.show(`<div class="box event" style="width:min(560px,100%)"><div class="eic">${L.icon(E.icon)}</div><h2>${E.title}</h2><p class="txt">${text}</p>${U.runBar(w)}<div class="row"><button class="btn" data-a="ok">Continuar</button></div></div>`);
+    U.on('[data-a=ok]', 'click', () => { snd('click'); cb(); });
+  };
+
+  /* ---------------- pausa ---------------- */
+  U.pause = function (w, cb) {
+    U.show(`<div class="box" style="width:min(520px,100%)"><h2>Pausa</h2><div class="sub">${w.biome().name}</div>${U.runBar(w)}
+      <div class="row" style="flex-direction:column;align-items:center"><button class="btn" data-a="resume">Seguir volando</button><button class="btn alt" data-a="opts">Opciones</button><button class="btn alt" data-a="how">Cómo se juega</button><button class="btn alt" data-a="quit">Abandonar partida</button></div></div>`);
+    U.on('[data-a]', 'click', (el) => { snd('click'); cb(el.dataset.a); });
+  };
+
+  /* ---------------- fin ---------------- */
+  U.end = function (w, won, news, cb) {
+    const s = w.stats;
+    const m = Math.floor(s.time / 60), sec = Math.floor(s.time % 60);
+    U.show(`<div class="box" style="width:min(640px,100%)"><h2 style="color:${won ? '#ffe7a0' : '#ffb0c8'}">${won ? '¡Ha amanecido!' : 'Tu luz se apaga…'}</h2>
+      <div class="sub">${won ? 'La Reina Eclipse ha caído y el sol vuelve a salir.' : 'Pero las luciérnagas siempre vuelven a brillar.'}</div>
+      <div class="stats">
+        <div class="stat"><b>${L.fmt(s.score)}</b><span>Puntuación</span></div>
+        <div class="stat"><b>${w.biome().name.split(' ')[0]} ${w.floor + 1}</b><span>Noche alcanzada</span></div>
+        <div class="stat"><b>${s.loops}</b><span>Lazos cerrados</span></div>
+        <div class="stat"><b>${s.kills}</b><span>Sombras atrapadas</span></div>
+        <div class="stat"><b>×${s.bestCombo}</b><span>Mejor lazo</span></div>
+        <div class="stat"><b>${m}:${String(sec).padStart(2, '0')}</b><span>Tiempo</span></div>
+      </div>
+      <div style="margin-top:14px">${U.donRow(w)}</div>
+      ${news.length ? `<div style="margin-top:14px;text-align:center;color:var(--gold);font-weight:600">${news.join('<br>')}</div>` : ''}
+      <div class="row"><button class="btn" data-a="again">Otra vez</button><button class="btn alt" data-a="menu">Menú</button></div></div>`);
+    U.on('[data-a]', 'click', (el) => { snd('click'); cb(el.dataset.a); });
+  };
+
+  /* ---------------- diario (códice) ---------------- */
+  U.codex = function (meta, back) {
+    let tab = 'dones';
+    const draw = () => {
+      let body = '';
+      if (tab === 'dones') {
+        const n = L.DONES.filter((d) => meta.d.seen['d:' + d.id]).length;
+        body = `<div class="sub" style="margin-top:0">${n} / ${L.DONES.length} dones descubiertos</div><div class="grid">${L.DONES.map((d) => meta.d.seen['d:' + d.id] ? `<div class="gi" style="--rc:${L.RARITY[d.r].color}"><div class="gic">${L.icon(d.icon)}</div><div><b>${d.name}</b><small>${d.desc}</small></div></div>` : `<div class="gi unk"><div class="gic">${L.icon('question')}</div><div><b>???</b><small>Aún por descubrir</small></div></div>`).join('')}</div>`;
+      } else if (tab === 'sombras') {
+        const ids = Object.keys(L.ENEMIES);
+        body = `<div class="grid">${ids.map((id) => { const E = L.ENEMIES[id]; return meta.d.seen['e:' + id] ? `<div class="gi" style="--rc:${E.eye}"><div class="gic" style="background:${E.color};border-radius:50%">${L.icon(E.boss ? 'crown' : 'veil')}</div><div><b>${E.name}</b><small>${E.desc}</small></div></div>` : `<div class="gi unk"><div class="gic">${L.icon('question')}</div><div><b>???</b><small>Aún no la has visto</small></div></div>`; }).join('')}</div>`;
+      } else if (tab === 'logros') {
+        body = `<div class="grid">${L.ACH.map((a) => `<div class="gi ${meta.d.ach[a.id] ? '' : 'unk'}" style="--rc:#ffd76a"><div class="gic">${L.icon(meta.d.ach[a.id] ? 'stars' : 'lock')}</div><div><b>${a.name}</b><small>${a.desc}</small></div></div>`).join('')}</div>`;
+      } else {
+        const s = meta.d.stats;
+        body = `<div class="stats"><div class="stat"><b>${s.runs}</b><span>Partidas</span></div><div class="stat"><b>${s.wins}</b><span>Amaneceres</span></div><div class="stat"><b>${L.fmt(s.best)}</b><span>Mejor puntuación</span></div><div class="stat"><b>×${s.combo}</b><span>Mejor lazo</span></div><div class="stat"><b>${L.fmt(s.kills)}</b><span>Sombras atrapadas</span></div><div class="stat"><b>${L.fmt(s.loops)}</b><span>Lazos cerrados</span></div></div>`;
+      }
+      U.show(`<div class="box" style="width:min(820px,100%)"><h2>Diario de la noche</h2><div class="sub">Todo lo que has visto bajo las estrellas</div>
+        <div class="tabs">${[['dones', 'Dones'], ['sombras', 'Sombras'], ['logros', 'Logros'], ['stats', 'Estadísticas']].map(([k, n]) => `<div class="tab ${k === tab ? 'on' : ''}" data-t="${k}">${n}</div>`).join('')}</div>${body}
+        <div class="row"><button class="btn alt" data-a="back">Volver</button></div></div>`);
+      U.on('[data-t]', 'click', (el) => { tab = el.dataset.t; snd('click'); draw(); });
+      U.on('[data-a=back]', 'click', () => { snd('click'); back(); });
+    };
+    draw();
+  };
+
+  U.options = function (meta, apply, back) {
+    const s = meta.d.settings;
+    const draw = () => {
+      U.show(`<div class="box" style="width:min(520px,100%)"><h2>Opciones</h2>
+        <div class="optrow"><span>Efectos</span><input type="range" id="o-sfx" min="0" max="1" step="0.05" value="${s.sfx}"></div>
+        <div class="optrow"><span>Música</span><input type="range" id="o-mus" min="0" max="1" step="0.05" value="${s.music}"></div>
+        <div class="optrow"><span>Temblor de pantalla</span><div class="seg"><button data-k="shake" data-v="1" class="${s.shake ? 'on' : ''}">Sí</button><button data-k="shake" data-v="0" class="${!s.shake ? 'on' : ''}">No</button></div></div>
+        <div class="optrow"><span>Control táctil</span><div class="seg"><button data-k="touch" data-v="rel" class="${s.touch === 'rel' ? 'on' : ''}">Arrastrar</button><button data-k="touch" data-v="abs" class="${s.touch === 'abs' ? 'on' : ''}">Seguir el dedo</button></div></div>
+        <div class="row"><button class="btn alt small" data-a="reset">Borrar progreso</button><button class="btn" data-a="back">Volver</button></div></div>`);
+      $('o-sfx').oninput = (e) => { s.sfx = +e.target.value; apply(); };
+      $('o-mus').oninput = (e) => { s.music = +e.target.value; apply(); };
+      $('o-sfx').onchange = () => { meta.save(); snd('polen'); };
+      $('o-mus').onchange = () => meta.save();
+      U.on('[data-k]', 'click', (el) => { const k = el.dataset.k, v = el.dataset.v; s[k] = k === 'shake' ? v === '1' : v; meta.save(); apply(); snd('click'); draw(); });
+      U.on('[data-a=back]', 'click', () => { snd('click'); back(); });
+      U.on('[data-a=reset]', 'click', (el) => { if (el.dataset.sure) { meta.reset(); apply(); U.toast('Progreso borrado'); back(); } else { el.dataset.sure = 1; el.textContent = '¿Seguro? Pulsa otra vez'; } });
+    };
+    draw();
+  };
+
+  U.howto = function (back) {
+    const pages = [
+      ['Vuela', 'Mueve tu luciérnaga con el <b>ratón</b>, las <b>flechas/WASD</b> o <b>arrastrando el dedo</b>. Dejas tras de ti una estela de luz.'],
+      ['Cierra lazos', 'Si <b>cruzas tu propia estela</b>, se cierra un lazo. Todas las sombras que queden <b>dentro</b> reciben daño. ¡Cuantas más atrapes de una vez, mejor!'],
+      ['Esquiva', 'Si una sombra te toca, pierdes un corazón. Usa el <b>impulso</b> (clic, Espacio o el botón táctil) para atravesar el peligro. Cuidado: los orbes y las tijeretas <b>cortan tu estela</b>.'],
+      ['El camino', 'Cada noche es un mapa de caminos: salas de sombras, mercados, manantiales, tesoros y misterios. Al final te espera un <b>Guardián</b>. Supera tres noches para ver el amanecer.'],
+      ['Dones', 'Tras cada sala eliges un <b>don</b>. Combínalos: estelas ardientes, ecos, supernovas, hermanas que orbitan… Ninguna partida será igual.'],
+    ];
+    let i = 0;
+    const draw = () => {
+      U.show(`<div class="box howto" style="width:min(560px,100%)"><h2>${pages[i][0]}</h2>
+        <div class="demo"><svg viewBox="0 0 220 120" width="260" height="140">${demo(i)}</svg></div>
+        <p style="text-align:center">${pages[i][1]}</p>
+        <div class="row"><button class="btn alt small" data-a="prev" ${i ? '' : 'disabled'}>Anterior</button><button class="btn small" data-a="next">${i === pages.length - 1 ? '¡Entendido!' : 'Siguiente'}</button></div></div>`);
+      U.on('[data-a=prev]', 'click', () => { i = Math.max(0, i - 1); snd('click'); draw(); });
+      U.on('[data-a=next]', 'click', () => { snd('click'); if (i === pages.length - 1) back(); else { i++; draw(); } });
+    };
+    draw();
+  };
+  function demo(i) {
+    const fly = (x, y) => `<circle cx="${x}" cy="${y}" r="14" fill="rgba(255,215,106,.25)"/><circle cx="${x}" cy="${y}" r="6" fill="#ffd76a"/>`;
+    const shadow = (x, y) => `<circle cx="${x}" cy="${y}" r="10" fill="#2a2440" stroke="#ff9ad5" stroke-opacity=".6"/><circle cx="${x - 3}" cy="${y - 2}" r="1.8" fill="#ff9ad5"/><circle cx="${x + 3}" cy="${y - 2}" r="1.8" fill="#ff9ad5"/>`;
+    if (i === 0) return `<path d="M20 90 C60 30 110 110 170 50" stroke="#ffd76a" stroke-width="4" fill="none" stroke-linecap="round" opacity=".8"><animate attributeName="stroke-dasharray" values="0 400;400 0" dur="2s" repeatCount="indefinite"/></path>${fly(170, 50)}`;
+    if (i === 1) return `<path d="M40 100 C30 40 90 15 140 30 C190 45 180 100 120 105 C80 108 60 80 70 50" stroke="#ffd76a" stroke-width="4" fill="rgba(255,215,106,.12)" stroke-linecap="round"/>${shadow(105, 65)}${shadow(130, 75)}${shadow(90, 85)}${fly(70, 50)}`;
+    if (i === 2) return `${shadow(120, 60)}<path d="M40 60 L180 60" stroke="#8fd8ff" stroke-width="6" stroke-dasharray="4 8" stroke-linecap="round"/>${fly(180, 60)}`;
+    if (i === 3) return `<g stroke="rgba(255,255,255,.4)" stroke-dasharray="2 6" stroke-width="2"><line x1="40" y1="100" x2="80" y2="60"/><line x1="80" y1="60" x2="140" y2="70"/><line x1="140" y1="70" x2="180" y2="25"/><line x1="40" y1="100" x2="110" y2="105"/><line x1="110" y1="105" x2="140" y2="70"/></g>${[[40, 100, '#9fd8ff'], [80, 60, '#d9b3ff'], [110, 105, '#9cffb0'], [140, 70, '#ffd36e'], [180, 25, '#ff6a9a']].map(([x, y, c]) => `<circle cx="${x}" cy="${y}" r="11" fill="#0d0b22" stroke="${c}" stroke-width="3"/>`).join('')}`;
+    return `${[30, 85, 140].map((x, k) => `<rect x="${x}" y="20" width="50" height="80" rx="10" fill="rgba(255,255,255,.06)" stroke="${['#9fd8ff', '#9cffb0', '#ffb36a'][k]}" stroke-width="2"/><circle cx="${x + 25}" cy="52" r="12" fill="${['#9fd8ff', '#9cffb0', '#ffb36a'][k]}" opacity=".5"/>`).join('')}`;
+  }
+  L.U = U;
+})(globalThis.L = globalThis.L || {});
+
+</script>
+<script>
+/* LAZO — controlador: bucle, entrada, flujo de la partida y progreso */
+(function (L) {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const U = L.U, A = L.A, R = L.R;
+
+  /* ---------------- progreso ---------------- */
+  const KEY = 'lazo.meta.v1', RUN = 'lazo.run.v1';
+  const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }, del(k) { try { localStorage.removeItem(k); } catch (e) {} } };
+  const def = () => ({ ach: {}, seen: {}, stats: { runs: 0, wins: 0, best: 0, combo: 0, kills: 0, loops: 0 }, settings: { sfx: 0.7, music: 0.5, shake: true, touch: 'rel' }, maxMoon: 0, lastMoon: 0, lastChar: 'lumi', tutorial: false });
+  const Meta = {
+    d: def(),
+    load() { try { const x = JSON.parse(store.get(KEY) || 'null'); if (x) { const b = def(); this.d = { ...b, ...x, stats: { ...b.stats, ...x.stats }, settings: { ...b.settings, ...x.settings } }; } } catch (e) {} },
+    save() { store.set(KEY, JSON.stringify(this.d)); },
+    reset() { store.del(KEY); store.del(RUN); this.d = def(); },
+    unlocked(id) { const c = L.CHARS.find((x) => x.id === id); return !c.unlock || !!this.d.ach[c.unlock.id]; },
+    get lastChar() { return this.d.lastChar; },
+  };
+
+  /* ---------------- estado ---------------- */
+  let w = null, mode = 'menu', paused = false, last = 0, t = 0, deco = null, roomNode = null;
+  let vw = 0, vh = 0, S = 1;
+  const isTouch = () => matchMedia('(pointer: coarse)').matches;
+
+  function size() {
+    vw = innerWidth; vh = innerHeight;
+    S = L.clamp(Math.sqrt(vw * vh) / 720, 0.5, 2.4);
+    R.resize(vw, vh, S);
+    const W = vw / S, H = vh / S;
+    if (w) { if (mode === 'room') w.resize(W, H); else { w.W = W; w.H = H; } }
+    if (deco) { deco.W = W; deco.H = H; }
+  }
+  const worldDims = () => ({ W: vw / S, H: vh / S });
+
+  function applySettings() {
+    const s = Meta.d.settings;
+    A.setVolumes(s.sfx, s.music);
+    R.reduced = !s.shake;
+  }
+
+  /* ---------------- entrada ---------------- */
+  const keys = {};
+  let touchId = null, tStart = null;
+  function toWorld(cx, cy) { return { x: cx / S, y: cy / S }; }
+  function bindInput() {
+    const cv = $('cv');
+    cv.addEventListener('pointermove', (e) => {
+      if (!w || mode !== 'room') return;
+      if (e.pointerType === 'mouse') { const p = toWorld(e.clientX, e.clientY); w.input.tx = p.x; w.input.ty = p.y; }
+      else if (e.pointerId === touchId && tStart) {
+        if (Meta.d.settings.touch === 'abs') { const p = toWorld(e.clientX, e.clientY - 60); w.input.tx = p.x; w.input.ty = p.y; }
+        else { const k = 1.35 / S; w.input.tx = tStart.px + (e.clientX - tStart.x) * k; w.input.ty = tStart.py + (e.clientY - tStart.y) * k; }
+      }
+    });
+    cv.addEventListener('pointerdown', (e) => {
+      A.init();
+      if (!w || mode !== 'room' || paused) return;
+      if (e.pointerType === 'mouse') { if (e.button === 0 || e.button === 2) w.input.dash = true; return; }
+      if (touchId == null) {
+        touchId = e.pointerId; tStart = { x: e.clientX, y: e.clientY, px: w.p.x, py: w.p.y };
+        if (Meta.d.settings.touch === 'abs') { const p = toWorld(e.clientX, e.clientY - 60); w.input.tx = p.x; w.input.ty = p.y; } else { w.input.tx = w.p.x; w.input.ty = w.p.y; }
+      }
+    });
+    const up = (e) => { if (e.pointerId === touchId) { touchId = null; tStart = null; if (w) { w.input.tx = w.p.x + w.p.vx * 0.08; w.input.ty = w.p.y + w.p.vy * 0.08; } } };
+    cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+    cv.addEventListener('contextmenu', (e) => e.preventDefault());
+    addEventListener('keydown', (e) => {
+      A.init();
+      const k = e.key.toLowerCase();
+      keys[k] = true;
+      if (mode === 'room' && w) {
+        if (k === ' ' || k === 'shift' || k === 'k') { e.preventDefault(); w.input.dash = true; }
+        if (k === 'escape' || k === 'p') { paused ? resume() : pause(); }
+      }
+      updKeys();
+    });
+    addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; updKeys(); });
+    addEventListener('blur', () => { for (const k in keys) keys[k] = false; updKeys(); if (mode === 'room' && !paused) pause(); });
+    document.addEventListener('visibilitychange', () => { if (document.hidden && mode === 'room' && !paused) pause(); });
+    $('touch-dash').addEventListener('pointerdown', (e) => { e.stopPropagation(); A.init(); if (w && mode === 'room') w.input.dash = true; });
+    $('btn-pause').innerHTML = L.icon('pause');
+    $('touch-dash').innerHTML = L.icon('bolt');
+    $('btn-pause').addEventListener('click', () => { if (mode === 'room') pause(); });
+  }
+  function updKeys() {
+    if (!w) return;
+    const x = (keys.arrowright || keys.d ? 1 : 0) - (keys.arrowleft || keys.a ? 1 : 0);
+    const y = (keys.arrowdown || keys.s ? 1 : 0) - (keys.arrowup || keys.w ? 1 : 0);
+    w.input.kx = x; w.input.ky = y;
+    if (x || y) w.input.tx = null;
+  }
+
+  /* ---------------- HUD ---------------- */
+  const hudC = {};
+  function hud() {
+    if (!w) return;
+    const p = w.p;
+    const hk = p.hearts + '/' + p.st.maxHearts + '/' + p.shield;
+    if (hudC.h !== hk) {
+      const prev = hudC.hp; hudC.h = hk; hudC.hp = p.hearts;
+      let h = '';
+      for (let i = 0; i < p.st.maxHearts; i++) h += U.heartSVG(i < p.hearts ? (prev != null && i === p.hearts - 1 && p.hearts > prev ? 'pop' : '') : 'empty');
+      if (p.shield) h += U.heartSVG('shield');
+      $('hearts').innerHTML = h;
+    }
+    if (hudC.pol !== w.polen) { $('polen-v').textContent = w.polen; if (hudC.pol != null && w.polen > hudC.pol) { const el = $('polen'); el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); } hudC.pol = w.polen; }
+    const dk = p.dashCd <= 0 ? 1 : 1 - p.dashCd / p.st.dashCd;
+    $('dash-fill').style.width = (dk * 100).toFixed(0) + '%';
+    $('dash').classList.toggle('ready', dk >= 1);
+    $('touch-dash').classList.toggle('cd', dk < 1);
+    let label = '';
+    if (w.roomType === 'boss') label = '';
+    else if (w.cleared) label = '¡Sala despejada!';
+    else label = 'Oleada ' + Math.max(1, w.wave) + ' de ' + w.waves.length + (w.roomType === 'elite' ? ' · Sombras mayores' : '');
+    if (hudC.lab !== label) { $('room-label').textContent = label; hudC.lab = label; }
+    if (w.boss) {
+      $('bossbar').classList.remove('hidden');
+      $('boss-name').textContent = L.ENEMIES[w.boss.t].name;
+      $('boss-fill').style.width = Math.max(0, (w.boss.hp / w.boss.maxHp) * 100) + '%';
+    } else $('bossbar').classList.add('hidden');
+  }
+  function showHud(on) { $('hud').classList.toggle('hidden', !on); $('touch-dash').classList.toggle('hidden', !on || !isTouch()); for (const k in hudC) delete hudC[k]; }
+
+  /* ---------------- tutorial ---------------- */
+  let tutStep = 0;
+  function hint(html) { const h = $('hint'); h.innerHTML = html || ''; h.classList.toggle('show', !!html); }
+  function tutorial(ev) {
+    if (Meta.d.tutorial || mode !== 'room') return;
+    if (tutStep === 0) { hint(isTouch() ? 'Arrastra el dedo para volar.<small>Cruza tu propia estela para cerrar un lazo alrededor de las sombras.</small>' : 'Mueve el ratón para volar.<small>Cruza tu propia estela para cerrar un lazo alrededor de las sombras.</small>'); tutStep = 1; }
+    if (ev && ev.t === 'loop' && ev.n > 0 && tutStep === 1) { hint('¡Eso es! Cuantas más sombras atrapes de golpe, mejor.<small>' + (isTouch() ? 'Toca el botón del rayo' : 'Haz clic o pulsa Espacio') + ' para dar un impulso y esquivar.</small>'); tutStep = 2; setTimeout(() => { if (tutStep === 2) hint(''); }, 6000); }
+    if (ev && ev.t === 'clear' && tutStep >= 1) { tutStep = 3; hint(''); Meta.d.tutorial = true; Meta.save(); }
+  }
+
+  /* ---------------- bucle ---------------- */
+  function frame(now) {
+    requestAnimationFrame(frame);
+    const dt = Math.min(1 / 30, (now - last) / 1000 || 0); last = now; t += dt;
+    if (mode === 'room' && w) {
+      if (!paused) {
+        w.update(dt);
+        handleEvents();
+      }
+      R.draw(w, t);
+      hud();
+    } else if (mode === 'over' && w) {
+      R.draw(w, t);
+    } else {
+      R.drawIdle(w || deco, t);
+    }
+  }
+  function handleEvents() {
+    const evs = w.events; w.events = [];
+    for (const ev of evs) {
+      switch (ev.t) {
+        case 'loop': A.sfx.loop(ev.n, ev.solar); break;
+        case 'echo': A.sfx.echo(); break;
+        case 'kill': ev.boss ? A.sfx.bossDown() : ev.elite ? A.sfx.bigkill() : A.sfx.kill(); break;
+        case 'hurt': A.sfx.hurt(); break;
+        case 'dash': A.sfx.dash(); break;
+        case 'polen': A.sfx.polen(); break;
+        case 'shoot': A.sfx.shoot(); break;
+        case 'cut': A.sfx.cut(); break;
+        case 'boom': A.sfx.boom(); break;
+        case 'wave': if (ev.n > 1) A.sfx.wave(); break;
+        case 'clear': A.sfx.clear(); if (w.roomType !== 'boss') U.banner('¡Despejado!', null, '#9cffc8'); break;
+        case 'heal': A.sfx.heal(); break;
+        case 'shield': A.sfx.shield(); break;
+        case 'tell': A.sfx.tell(); break;
+        case 'summon': A.sfx.summon(); break;
+        case 'phase': A.sfx.phase(); break;
+        case 'revive': A.sfx.revive(); U.banner('¡Renaces!', 'La Pluma de Fénix arde por ti', '#ffb36a'); break;
+        case 'bossDown': U.banner('¡' + L.ENEMIES[w.boss.t].name + ' ha caído!', null, '#ff8ac8'); break;
+        case 'ach': ach(ev.id); break;
+        case 'roomDone': afterRoom(); break;
+        case 'dead': die(); break;
+      }
+      tutorial(ev);
+    }
+    // descubrimientos
+    for (const e of w.enemies) if (!Meta.d.seen['e:' + e.t]) { Meta.d.seen['e:' + e.t] = 1; }
+  }
+  function ach(id) {
+    if (Meta.d.ach[id]) return;
+    Meta.d.ach[id] = Date.now();
+    const a = L.ACH.find((x) => x.id === id);
+    if (a) { U.toast('★ Logro: ' + a.name); A.sfx.ach(); }
+    for (const c of L.CHARS) if (c.unlock && c.unlock.id === id) setTimeout(() => U.toast('✦ Nueva luciérnaga: ' + c.name), 900);
+    if (L.CHARS.every((c) => Meta.unlocked(c.id)) && !Meta.d.ach.todos) ach('todos');
+    Meta.save();
+  }
+  function seeDons() { for (const d of w.dones) Meta.d.seen['d:' + d.id] = 1; }
+
+  /* ---------------- flujo ---------------- */
+  function saveRun() { if (w) { seeDons(); store.set(RUN, JSON.stringify(w.save())); Meta.save(); } }
+  function menu() {
+    mode = 'menu'; paused = false; showHud(false); hint('');
+    if (!deco) { deco = new L.World({ seed: 'MENU', ...worldDims() }); }
+    w = null;
+    A.setMood('menu');
+    U.menu(!!store.get(RUN), (a) => {
+      if (a === 'continue') continueRun();
+      else if (a === 'new') U.charSelect(Meta, startRun, menu);
+      else if (a === 'how') U.howto(menu);
+      else if (a === 'codex') U.codex(Meta, menu);
+      else if (a === 'opts') U.options(Meta, applySettings, menu);
+    });
+  }
+  function startRun(charId, moon) {
+    Meta.d.lastChar = charId; Meta.d.lastMoon = moon; Meta.d.stats.runs++; Meta.save();
+    w = new L.World({ charId, moon, ...worldDims() });
+    w.events = [];
+    store.set(RUN, JSON.stringify(w.save()));
+    showMap();
+  }
+  function continueRun() {
+    try { const d = JSON.parse(store.get(RUN)); const { W, H } = worldDims(); w = L.World.load(d, W, H); } catch (e) { store.del(RUN); menu(); return; }
+    showMap();
+  }
+  function showMap() {
+    mode = 'map'; showHud(false); hint('');
+    A.setMood('map');
+    saveRun();
+    U.map(w, enterNode, () => { saveRun(); menu(); });
+  }
+  function enterNode(id) {
+    const node = w.choose(id);
+    if (!node) return;
+    roomNode = node;
+    saveRun();
+    const T = node.type;
+    if (T === 'combat' || T === 'elite' || T === 'boss') startRoom(T);
+    else if (T === 'treasure') reward('treasure', 'Un cofre de luz', 'Elige un don');
+    else if (T === 'shop') shop();
+    else if (T === 'fountain') U.fountain(w, (o) => { if (o === 'heal') w.heal(99); else { w.p.bonusHearts++; w.recalc(); } w.events = []; showMap(); });
+    else if (T === 'event') event();
+  }
+  function startRoom(type) {
+    U.hide();
+    const { W, H } = worldDims(); w.W = W; w.H = H;
+    w.startRoom(type);
+    mode = 'room'; paused = false; showHud(true);
+    A.setMood(type === 'boss' ? 'boss' : w.biome().id);
+    if (type === 'boss') { const E = L.ENEMIES[w.boss.t]; U.banner(E.name, E.desc, '#ff6a9a'); A.sfx.phase(); }
+    else if (type === 'elite') U.banner('Sombras mayores', 'Más fuertes, mejores premios', '#ff8a8a');
+    tutStep = 0; tutorial();
+    const it = w.input; it.tx = null; it.kx = it.ky = 0;
+  }
+  function afterRoom() {
+    mode = 'reward'; showHud(false); hint('');
+    const type = roomNode.type;
+    Meta.d.stats.kills += 0;
+    if (type === 'boss') {
+      if (w.floor >= 2) { win(); return; }
+      reward('boss', '¡Guardián vencido!', 'Elige un don poderoso', () => {
+        w.nextFloor(); w.heal(2);
+        showMap();
+      });
+      return;
+    }
+    reward(type === 'elite' ? 'elite' : 'combat', type === 'elite' ? '¡Sombras mayores vencidas!' : '¡Sala despejada!', 'Elige un don');
+  }
+  function reward(kind, title, sub, after) {
+    mode = 'reward'; showHud(false);
+    const ch = w.donChoices(kind);
+    U.reward(w, title, sub, ch, (id) => {
+      if (id) { w.addDon(id); A.sfx.pick(); } else w.polen += 10;
+      w.events = [];
+      if (after) after(); else showMap();
+    });
+  }
+  function shop() {
+    const f = 1 + w.floor * 0.2;
+    const items = [];
+    const ex = [];
+    for (let i = 0; i < 3; i++) { const d = w.randomDon(1, 3, ex); ex.push(d.id); items.push({ kind: 'don', id: d.id, price: Math.round([0, 32, 55, 85][d.r] * f) }); }
+    items.push({ kind: 'heal', price: Math.round(14 * f) });
+    items.push({ kind: 'max', price: Math.round(48 * f) });
+    const stock = { items, reroll: 10 };
+    U.shop(w, stock, (a) => {
+      if (a === 'reroll') { const ex2 = []; stock.items = stock.items.map((it) => { if (it.kind !== 'don') return it; const d = w.randomDon(1, 3, ex2); ex2.push(d.id); return { kind: 'don', id: d.id, price: Math.round([0, 32, 55, 85][d.r] * f) }; }); }
+      if (a === 'leave') { w.events = []; showMap(); }
+    });
+  }
+  function event() {
+    const pool = L.EVENTS.filter((e) => !(w.seenEvents || []).includes(e.id));
+    const E = w.rng.pick(pool.length ? pool : L.EVENTS);
+    (w.seenEvents = w.seenEvents || []).push(E.id);
+    U.event(w, E, (i) => {
+      const o = E.opts[i];
+      const txt = o.run(w);
+      w.events = [];
+      U.eventResult(w, E, txt, () => {
+        if (w.pendingChoice) { const pc = w.pendingChoice; w.pendingChoice = null; const ch = []; for (let k = 0; k < 3; k++) ch.push(w.randomDon(pc.rarityMin, 3, ch.map((x) => x.id))); U.reward(w, 'Un regalo de la noche', 'Elige un don', ch, (id) => { if (id) w.addDon(id); else w.polen += 10; w.events = []; showMap(); }); }
+        else showMap();
+      });
+    });
+  }
+  function pause() {
+    if (mode !== 'room' || paused) return;
+    paused = true; hint('');
+    U.pause(w, (a) => {
+      if (a === 'resume') resume();
+      else if (a === 'opts') U.options(Meta, applySettings, () => { paused = false; pause(); });
+      else if (a === 'how') U.howto(() => { paused = false; pause(); });
+      else if (a === 'quit') { endRun(false); }
+    });
+  }
+  function resume() { paused = false; U.hide(); last = performance.now(); }
+  function recordEnd(won) {
+    const s = Meta.d.stats, st = w.stats;
+    s.kills += st.kills; s.loops += st.loops; s.best = Math.max(s.best, st.score); s.combo = Math.max(s.combo, st.bestCombo);
+    if (won) { s.wins++; if (w.moon >= Meta.d.maxMoon && w.moon < L.MOONS.length - 1) Meta.d.maxMoon = w.moon + 1; }
+    seeDons(); store.del(RUN); Meta.save();
+  }
+  function die() {
+    mode = 'over'; showHud(false); hint('');
+    A.sfx.dead();
+    setTimeout(() => endRun(false), 1400);
+  }
+  function endRun(won) {
+    const before = L.CHARS.filter((c) => Meta.unlocked(c.id)).length;
+    recordEnd(won);
+    const news = [];
+    if (won && w.moon + 1 === Meta.d.maxMoon && w.moon + 1 < L.MOONS.length) news.push('✦ Nueva dificultad: ' + L.MOONS[w.moon + 1].name);
+    const after = L.CHARS.filter((c) => Meta.unlocked(c.id)).length;
+    if (after > before) news.push('✦ ¡Has desbloqueado una nueva luciérnaga!');
+    mode = 'end'; showHud(false); paused = false;
+    U.end(w, won, news, (a) => { if (a === 'again') { const c = w.charId, m = w.moon; startRun(c, m); } else menu(); });
+  }
+  function win() {
+    ach('victoria');
+    if (w.stats.time < 20 * 60) ach('velocista');
+    if (w.moon >= 3) ach('luna3');
+    A.sfx.victory();
+    U.banner('¡Amanece!', 'La noche ha terminado', '#ffe7a0');
+    setTimeout(() => endRun(true), 1800);
+  }
+
+  function boot() {
+    Meta.load();
+    R.init($('cv'));
+    size();
+    applySettings();
+    bindInput();
+    addEventListener('resize', size);
+    menu();
+    requestAnimationFrame(frame);
+    window.LAZO = { get w() { return w; }, Meta, get mode() { return mode; }, startRun, enterNode };
+  }
+  boot();
+})(globalThis.L = globalThis.L || {});
+
+</script>

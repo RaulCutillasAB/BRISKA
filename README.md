@@ -1,56 +1,32 @@
-# BRISKA · naipes bajo las estrellas
+# LAZO · una luciérnaga contra la noche
 
-Un *roguelike* de construcción de mazos con la **baraja española**. Juega manos de póker con Oros, Copas, Espadas y Bastos, colecciona **Talismanes** que rompen las reglas, y sobrevive a las ocho Noches custodiadas por sus **Guardianes**.
+Un roguelike de acción original: no disparas ni juegas cartas. **Vuelas dejando una estela de luz, y cuando la cruzas cierras un lazo**: todas las sombras que queden dentro reciben daño. Cuantas más atrapes de golpe, mayor el combo.
 
-> Arte, música, sonido, nombres y reglas originales. Todo se genera con código (SVG, WebGL y Web Audio): no hay imágenes ni audio de terceros.
+## Cómo se juega
 
-## Cómo jugar
+Abre `index.html` en el navegador (o `dist/lazo.html`, un único archivo). No necesita instalación.
 
-Abre `index.html` en cualquier navegador moderno (no necesita servidor ni instalación), o usa la versión de un solo archivo `dist/briska.html`.
+- **Moverse**: ratón, flechas/WASD o arrastrando el dedo.
+- **Impulso** (esquiva con invulnerabilidad): clic, Espacio o el botón del rayo en móvil.
+- **Pausa**: Esc o P.
 
-- Cada **Noche** tiene tres envites: *Menor*, *Mayor* y un **Guardián** con una regla maldita.
-- Selecciona hasta 5 cartas y juega una mano. Puntuación = **Fichas × Mult**.
-- **As 11, Tres 10, Rey 10, Caballo 9, Sota 8**; el resto vale su número (en la brisca, ¡el tres manda!).
-- Las escaleras siguen el orden A·2·3·4·5·6·7·Sota·Caballo·Rey·A.
-- **Triunfo**: cada ronda hay un palo de triunfo; sus cartas dan +1 Mult.
-- **Cantes**: Caballo y Rey del mismo palo cantan *Las Veinte* (+20 Fichas). En el palo de triunfo… **¡Las Cuarenta!** (+40).
-- Entre envites, visita **La Feria**: Talismanes, Augurios, Constelaciones, Sobres y Privilegios.
-
-Atajos: `Enter` jugar · `X` descartar · `R`/`P` ordenar por valor/palo · `Esc` opciones. Arrastra cartas y talismanes para reordenarlos (el orden de los talismanes importa).
+Cada partida recorre tres noches (Bosque de Luciérnagas, Pantano de Niebla y Cielo Eclipse). Cada una es un mapa de caminos con salas de sombras, sombras mayores, tesoros, mercados, manantiales y misterios, y termina con un Guardián.
 
 ## Contenido
 
-| | |
-|---|---|
-| Talismanes | 93 (comunes, infrecuentes, raros y legendarios) |
-| Augurios | 23 |
-| Constelaciones | 12 (incluidas 3 manos secretas) |
-| Ánimas | 16 |
-| Privilegios | 24 |
-| Guardianes | 25 (4 finales) |
-| Insignias | 14 |
-| Barajas | 11 desbloqueables |
-| Dificultades | 6 velas |
-| Logros | 25 |
+- 33 dones con sinergias (estelas ardientes, ecos, supernovas, lazos perpetuos, estela gemela…)
+- 10 tipos de sombra y 3 Guardianes con patrones propios
+- 8 eventos con decisiones
+- 5 luciérnagas desbloqueables y 6 lunas de dificultad
+- 14 logros, diario de descubrimientos y estadísticas
+- Música generativa y efectos sintetizados en el propio navegador
 
-Además: modo infinito tras ganar, **Reto del día** con semilla compartida, Grimorio de descubrimientos, estadísticas y guardado automático.
-
-## Estructura
-
-```
-index.html          punto de entrada
-css/style.css       estilos y animaciones
-js/core/            reglas del juego, sin DOM (se puede ejecutar en Node)
-  rng.js data.js hands.js talismans.js consumables.js scoring.js game.js meta.js
-js/ui/              arte SVG, iconos, audio, fondo WebGL, partículas, vista y pantallas
-js/main.js          controlador: une núcleo, vista y pantallas
-tools/              tests, simuladores de partidas y build
-```
+Todo el arte, el sonido y el diseño son originales y se generan por código.
 
 ## Desarrollo
 
 ```bash
-node tools/test.js        # tests del motor de reglas
-node tools/sim2.js 30     # un bot juega 30 partidas para medir el equilibrio
-node tools/build.js       # genera dist/briska.html (un solo archivo)
+node tools/test.js      # pruebas de la simulación
+node tools/sim.js 40 2  # un bot juega 40 partidas para medir la dificultad
+node tools/build.js     # genera dist/lazo.html
 ```

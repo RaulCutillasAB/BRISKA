@@ -1,53 +1,36 @@
-// Prueba visual con Playwright: recorre menú → partida → jugada → feria
+// Capturas automáticas con Playwright: menú, selección, mapa, combate, recompensa
 const { chromium } = require('playwright');
 const path = require('path');
 const OUT = process.env.OUT || '/tmp/shots';
 (async () => {
-  const W = +process.env.W || 1440, H = +process.env.H || 900;
-  const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-gl=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist'] }).catch(() => chromium.launch());
-  const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1, hasTouch: !!process.env.TOUCH });
+  const W = +process.env.W || 1440, H = +process.env.H || 900, TAG = process.env.TAG || 'd';
+  const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+  const page = await browser.newPage({ viewport: { width: W, height: H }, hasTouch: !!process.env.TOUCH });
   const errs = [];
-  page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') errs.push(m.type() + ': ' + m.text()); });
-  page.on('pageerror', (e) => errs.push('PAGEERROR: ' + e.message + '\n' + e.stack));
+  page.on('pageerror', (e) => errs.push('PAGEERROR ' + e.message + '\n' + e.stack));
+  page.on('console', (m) => { if (m.type() === 'error') errs.push('console ' + m.text()); });
   await page.goto('file://' + path.resolve(__dirname, '../index.html'));
-  await page.waitForTimeout(1500);
-  const tag = process.env.TAG || 'd';
-  await page.screenshot({ path: `${OUT}/${tag}-01-menu.png` });
-  await page.click('[data-a=new]');
-  await page.waitForTimeout(600);
-  await page.screenshot({ path: `${OUT}/${tag}-02-newrun.png` });
-  await page.click('#go');
   await page.waitForTimeout(1200);
-  // cerrar tutorial
-  for (let i = 0; i < 6; i++) { const b = await page.$('#h-next'); if (b) { await b.click(); await page.waitForTimeout(150); } }
-  await page.waitForTimeout(800);
-  await page.screenshot({ path: `${OUT}/${tag}-03-blind.png` });
-  await page.click('[data-act=select]');
-  await page.waitForTimeout(1800);
-  await page.screenshot({ path: `${OUT}/${tag}-04-round.png` });
-  // seleccionar las 5 primeras cartas del jugador
-  const ids = await page.evaluate(() => BR.game.hand.slice(0, 5));
-  for (const id of ids.slice(0, 2)) { await page.click(`.sp[data-key="${id}"]`); await page.waitForTimeout(120); }
-  await page.waitForTimeout(400);
-  await page.screenshot({ path: `${OUT}/${tag}-05-selected.png` });
-  await page.click('#btn-play');
-  await page.waitForTimeout(1700);
-  await page.screenshot({ path: `${OUT}/${tag}-06-scoring.png` });
-  await page.waitForTimeout(4500);
-  await page.screenshot({ path: `${OUT}/${tag}-07-after.png` });
-  // forzar victoria rápida para ver cobro y feria
-  await page.evaluate(() => { BR.game.r.target = 1; });
-  const ids2 = await page.evaluate(() => BR.game.hand.slice(0, 1));
-  await page.click(`.sp[data-key="${ids2[0]}"]`);
-  await page.click('#btn-play');
-  await page.waitForTimeout(6000);
-  await page.screenshot({ path: `${OUT}/${tag}-08-cashout.png` });
-  await page.click('#btn-cash');
+  await page.screenshot({ path: `${OUT}/${TAG}-1-menu.png` });
+  await page.click('[data-a=new]'); await page.waitForTimeout(500);
+  await page.screenshot({ path: `${OUT}/${TAG}-2-chars.png` });
+  await page.click('[data-a=go]'); await page.waitForTimeout(900);
+  await page.screenshot({ path: `${OUT}/${TAG}-3-map.png` });
+  await page.click('.mapnode.avail', { force: true }); await page.waitForTimeout(800);
+  // mover el ratón en círculos alrededor de las sombras
+  const t0 = Date.now(); let a = 0, shot = 0;
+  while (Date.now() - t0 < 26000) {
+    const st = await page.evaluate(() => { const w = LAZO.w; if (!w || LAZO.mode !== 'room') return null; const es = w.enemies.filter((e) => e.spawn <= 0); let cx = w.W / 2, cy = w.H / 2; if (es.length) { cx = es[0].x; cy = es[0].y; } return { cx, cy, S: innerWidth / w.W }; });
+    if (!st) break;
+    a += 0.35;
+    const R = 110;
+    await page.mouse.move((st.cx + Math.cos(a) * R) * st.S, (st.cy + Math.sin(a) * R) * st.S);
+    await page.waitForTimeout(40);
+    if ((Date.now() - t0 > 4000 && shot === 0) || (Date.now() - t0 > 9000 && shot === 1)) { await page.screenshot({ path: `${OUT}/${TAG}-4-play${shot}.png` }); shot++; }
+  }
   await page.waitForTimeout(1500);
-  await page.screenshot({ path: `${OUT}/${tag}-09-shop.png` });
-  // hover sobre un talismán de la feria
-  const sk = await page.evaluate(() => [...BR.View.sprites.keys()].find((k) => k.startsWith('shop')));
-  if (sk) { await page.hover(`.sp[data-key="${sk}"]`); await page.waitForTimeout(400); await page.screenshot({ path: `${OUT}/${tag}-10-tooltip.png` }); }
+  await page.screenshot({ path: `${OUT}/${TAG}-5-after.png` });
+  console.log(await page.evaluate(() => LAZO.mode + ' loops=' + (LAZO.w && LAZO.w.stats.loops) + ' kills=' + (LAZO.w && LAZO.w.stats.kills)));
   console.log(errs.join('\n') || 'no errors');
   await browser.close();
 })();
