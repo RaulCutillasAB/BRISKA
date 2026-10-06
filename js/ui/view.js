@@ -68,7 +68,8 @@
         if (d.kind === 'tal') inner.style.setProperty('--dl', (-Math.random() * 5).toFixed(2) + 's');
         stage.appendChild(el);
       }
-      if (s.removing) { s.removing = false; clearTimeout(s.rmTimer); s.el.classList.remove('dissolve', 'shatter'); s.el.style.opacity = ''; }
+      if (s.removing) { s.removing = false; clearTimeout(s.rmTimer); s.el.classList.remove('dissolve', 'shatter', 'down'); s.el.style.opacity = ''; s.tf = null; if (s.cls) s.cls.split(' ').filter(Boolean).forEach((c) => s.el.classList.remove(c)); s.cls = ''; }
+      s.exit = null;
       const sig = contentSig(d);
       if (sig !== s.sig) build(s, d);
       s.desc = d;

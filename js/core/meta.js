@@ -90,5 +90,64 @@
     M.save();
     return un;
   };
+  /* ---------------- logros ---------------- */
+  M.ACH = [
+    { id: 'primer', name: 'Primer envite', icon: 'spark', desc: 'Supera tu primer envite', check: (e) => e.type === 'round' },
+    { id: 'guardian', name: 'Cazador de sombras', icon: 'mask2', desc: 'Derrota a un Guardián', check: (e) => e.type === 'round' && e.boss },
+    { id: 'veinte', name: 'Cantaor', icon: 'horn', desc: 'Canta Las Veinte', check: (e) => e.type === 'hand' && !!e.cante },
+    { id: 'cuarenta', name: '¡Las Cuarenta!', icon: 'forty', desc: 'Canta Las Cuarenta en el palo de Triunfo', check: (e) => e.type === 'hand' && e.cante === 'cuarenta' },
+    { id: 'mil', name: 'Mano firme', icon: 'hand', desc: 'Consigue 1.000 puntos en una sola mano', check: (e) => e.type === 'hand' && e.total >= 1000 },
+    { id: 'diezmil', name: 'Mano maestra', icon: 'crown', desc: 'Consigue 10.000 puntos en una sola mano', check: (e) => e.type === 'hand' && e.total >= 1e4 },
+    { id: 'cienmil', name: 'Mano legendaria', icon: 'crown2', desc: 'Consigue 100.000 puntos en una sola mano', check: (e) => e.type === 'hand' && e.total >= 1e5 },
+    { id: 'millon', name: 'Firmamento', icon: 'comet', desc: 'Consigue 1.000.000 de puntos en una sola mano', check: (e) => e.type === 'hand' && e.total >= 1e6 },
+    { id: 'unamano', name: 'De un golpe', icon: 'target', desc: 'Supera un envite con una sola mano', check: (e) => e.type === 'round' && e.g.r && e.g.r.handsPlayed === 1 },
+    { id: 'frio', name: 'Sangre fría', icon: 'drop', desc: 'Derrota a un Guardián sin descartar', check: (e) => e.type === 'round' && e.boss && e.g.r && e.g.r.discardsUsed === 0 },
+    { id: 'noche4', name: 'Medianoche', icon: 'moon', desc: 'Llega a la Noche 4', check: (e) => e.g && e.g.ante >= 4 },
+    { id: 'victoria', name: 'Amanecer', icon: 'sun', desc: 'Gana una partida', check: (e) => e.type === 'win' },
+    { id: 'noche10', name: 'Más allá del alba', icon: 'eclipse', desc: 'Llega a la Noche 10 en modo infinito', check: (e) => e.g && e.g.ante >= 10 },
+    { id: 'rico', name: 'Bolsa llena', icon: 'chest', desc: 'Ten $50 a la vez', check: (e) => e.g && e.g.money >= 50 },
+    { id: 'escolor', name: 'Escalera Real', icon: 'stairs', desc: 'Juega una Escalera de Color', check: (e) => e.type === 'hand' && e.contains && e.contains.escolor },
+    { id: 'repoker', name: 'Cinco iguales', icon: 'cards', desc: 'Juega un Repóker', check: (e) => e.type === 'hand' && e.contains && e.contains.repoker },
+    { id: 'lleno', name: 'Galería completa', icon: 'frame', desc: 'Ten 5 Talismanes a la vez', check: (e) => e.g && e.g.talismans.length >= 5 },
+    { id: 'cristal', name: 'Añicos', icon: 'gem', desc: 'Rompe 3 cartas de Cristal en una partida', check: (e) => e.g && e.g.counts.glass >= 3 },
+    { id: 'nivel5', name: 'Astrónomo', icon: 'astrolabe', desc: 'Sube una mano a nivel 5', check: (e) => e.g && Object.values(e.g.handLevels).some((h) => h.lvl >= 5) },
+    { id: 'legend', name: 'Leyenda viva', icon: 'butterfly', desc: 'Consigue un Talismán Legendario', check: (e) => e.g && e.g.talismans.some((t) => BR.TAL_BY_ID[t.id].legendary) },
+    { id: 'biblio', name: 'Bibliófilo', icon: 'book', desc: 'Descubre 40 Talismanes', check: () => M.countDisc('tal') >= 40 },
+    { id: 'prisa', name: 'Prisa nocturna', icon: 'feather', desc: 'Salta 3 envites en una partida', check: (e) => e.g && e.g.counts.skips >= 3 },
+    { id: 'tahur', name: 'Tahúr', icon: 'twins', desc: 'Desbloquea todas las barajas', check: () => M.data.decks.length >= BR.DECKS.length },
+    { id: 'dorada', name: 'Llama eterna', icon: 'candle', desc: 'Gana una partida en Vela Dorada', check: (e) => e.type === 'win' && e.g.stake >= 5 },
+    { id: 'diario', name: 'Fiel a la cita', icon: 'hourglass', desc: 'Llega a la Noche 3 en un Reto del día', check: (e) => e.g && e.g.daily && e.g.ante >= 3 },
+  ];
+  M.checkAch = function (ev) {
+    const out = [];
+    M.data.ach = M.data.ach || {};
+    for (const a of M.ACH) {
+      if (M.data.ach[a.id]) continue;
+      let ok = false;
+      try { ok = !!a.check(ev); } catch (e) { ok = false; }
+      if (ok) { M.data.ach[a.id] = Date.now(); out.push(a); }
+    }
+    if (out.length) M.save();
+    return out;
+  };
+
+  /* ---------------- reto del día ---------------- */
+  M.today = function () { const d = new Date(); return d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0'); };
+  M.dailyInfo = function () {
+    const key = M.today();
+    const n = parseInt(key, 10);
+    const deck = BR.DECKS[n % BR.DECKS.length];
+    const best = (M.data.daily && M.data.daily.date === key) ? M.data.daily : null;
+    return { key, seed: 'DIA' + key.slice(2), deckId: deck.id, best };
+  };
+  M.recordDaily = function (g) {
+    if (!g.daily) return;
+    const key = g.daily;
+    if (!M.data.daily || M.data.daily.date !== key) M.data.daily = { date: key, ante: 0, best: 0, tries: 0 };
+    M.data.daily.ante = Math.max(M.data.daily.ante, g.ante);
+    M.data.daily.best = Math.max(M.data.daily.best, g.counts.best);
+    M.save();
+  };
+
   BR.Meta = M;
 })(globalThis.BR = globalThis.BR || {});

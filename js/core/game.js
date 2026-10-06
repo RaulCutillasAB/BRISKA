@@ -524,6 +524,7 @@
       else { const av = this.availableVouchers(); this.shop.voucher = av.length ? { kind: 'voucher', id: this.rng.pick(av).id } : null; }
       for (let i = 0; i < this.shopSlots(); i++) this.shop.items.push(this.genShopItem());
       this.shop.packs = [this.genPack(), this.genPack()];
+      this.seeShop();
       if (this.vouchers.includes('halcon')) this.shop.rerollCost -= 2;
       if (this.vouchers.includes('aguila')) this.shop.rerollCost -= 2;
       this.shop.baseReroll = this.shop.rerollCost;
@@ -554,11 +555,12 @@
       this.counts.rerolls++;
       this.shop.items = [];
       for (let i = 0; i < this.shopSlots(); i++) this.shop.items.push(this.genShopItem());
+      this.seeShop();
       return true;
     }
     rerollCostNow() { return this.shop.freeRerolls > 0 ? 0 : this.shop.rerollCost; }
 
-    buy(where, idx) {
+    buy(where, idx, useNow) {
       if (this.phase !== 'shop') return { err: 'No estás en la Feria' };
       const it = where === 'items' ? this.shop.items[idx] : where === 'packs' ? this.shop.packs[idx] : this.shop.voucher;
       if (!it) return { err: 'Agotado' };
@@ -570,6 +572,14 @@
         this.money -= cost; this.addTalisman(t, true);
         this.shop.items[idx] = null;
         return { ok: true, talisman: t };
+      }
+      if ((it.kind === 'aug' || it.kind === 'con' || it.kind === 'ani') && useNow) {
+        const inst = { type: it.kind, id: it.id };
+        if (!this.canUse(inst, [])) return { err: 'No se puede usar ahora' };
+        this.money -= cost;
+        this.shop.items[idx] = null;
+        this.discover(it.kind, it.id);
+        return { ok: true, used: this.applyConsumable(inst, []) };
       }
       if (it.kind === 'aug' || it.kind === 'con' || it.kind === 'ani') {
         if (this.consSpace() <= 0) return { err: 'No te quedan huecos de consumible' };
@@ -593,6 +603,10 @@
         return { ok: true, voucher: it.id };
       }
       return { err: '?' };
+    }
+    seeShop() {
+      for (const it of this.shop.items) if (it) this.discover(it.kind, it.id);
+      if (this.shop.voucher) this.discover('vou', this.shop.voucher.id);
     }
     applyVoucher(id) {
       if (id === 'mostrador' || id === 'granbazar') { this.shop.items.push(this.genShopItem()); }
@@ -653,6 +667,7 @@
       this.consumables = this.consumables.filter((x) => x !== inst);
       const res = this.applyConsumable(inst, ids);
       res.used = inst;
+      if (this.phase === 'round' && !this.hand.length) { this.draw(); if (!this.hand.length) { res.lost = true; this.phase = 'over'; } }
       return res;
     }
 
@@ -683,6 +698,7 @@
         choices.push(it);
       }
       this.pack = { kind, size, choices, picks: pick, ret: ret || 'shop', hand: null };
+      for (const c of choices) if (c.id) this.discover(c.kind, c.id);
       if (kind === 'aug' || kind === 'ani') {
         const ids = this.rng.shuffle(this.deck.map((c) => c.id)).slice(0, this.handSize());
         this.pack.hand = ids;

@@ -130,6 +130,7 @@
       <div class="menubtns">
         ${hasSave ? '<button class="btn play big" data-a="continue">Continuar partida</button>' : ''}
         <button class="btn ${hasSave ? 'blue' : 'play big'}" data-a="new">Nueva partida</button>
+        <button class="btn gold daily" data-a="daily">Reto del día <span class="dsub">${(() => { const d = BR.Meta.dailyInfo(); return BR.DECK_BY_ID[d.deckId].name + (d.best ? ' · récord: Noche ' + d.best.ante : ''); })()}</span></button>
         <button class="btn ghost" data-a="grim">Grimorio</button>
         <button class="btn ghost" data-a="how">Cómo se juega</button>
         <button class="btn ghost" data-a="opts">Opciones</button>
@@ -175,7 +176,7 @@
 
   /* ---------------- grimorio ---------------- */
   S.grimoire = function () {
-    const tabs = [['tal', 'Talismanes'], ['aug', 'Augurios'], ['con', 'Constelaciones'], ['ani', 'Ánimas'], ['vou', 'Privilegios'], ['boss', 'Guardianes'], ['stats', 'Estadísticas']];
+    const tabs = [['tal', 'Talismanes'], ['aug', 'Augurios'], ['con', 'Constelaciones'], ['ani', 'Ánimas'], ['vou', 'Privilegios'], ['boss', 'Guardianes'], ['ach', 'Logros'], ['stats', 'Estadísticas']];
     let cur = 'tal';
     const o = S.open(`<div class="modal" style="width:min(860px,100%)"><button class="close">×</button><h2>Grimorio</h2>
       <div class="subtitle">Todo lo que has descubierto bajo las estrellas</div>
@@ -199,6 +200,10 @@
       } else if (cur === 'boss') {
         const items = BR.BOSSES.map((b) => ({ known: M.isDisc('boss', b.id), html: `<div class="ci" data-tip="boss:${b.id}" style="display:grid;place-items:center;background:rgba(0,0,0,.3);border-radius:10px">${BR.Art.bossMedal(b.id, 58)}<div style="font-size:11px;text-align:center;font-weight:700;margin-top:-18px">${b.name}</div></div>` }));
         html = grid(items, BR.BOSSES.length);
+      } else if (cur === 'ach') {
+        const A = M.data.ach || {};
+        const n = M.ACH.filter((a) => A[a.id]).length;
+        html = `<div class="grimcount">${n} / ${M.ACH.length} logros</div><div class="achgrid">${M.ACH.map((a) => `<div class="achi ${A[a.id] ? 'on' : ''}"><div class="achic">${BR.icon(a.icon)}</div><div><b>${a.name}</b><div>${a.desc}</div></div></div>`).join('')}</div>`;
       } else {
         const st = M.data.stats;
         const fav = Object.entries(st.playedTypes).sort((a, b) => b[1] - a[1])[0];

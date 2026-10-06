@@ -124,7 +124,7 @@
     { name: 'Vela Dorada',  color: '#e8b52f', desc: '{k−1} Mano por ronda. El desafío definitivo' },
   ];
 
-  BR.ANTE_TARGETS = [300, 800, 2000, 4500, 9000, 17000, 30000, 50000];
+  BR.ANTE_TARGETS = [300, 800, 1900, 4200, 8500, 16000, 28000, 46000];
   BR.ANTE_TARGETS_HARD = [300, 1000, 2600, 6500, 14000, 28000, 52000, 90000];
   BR.anteBase = function (ante, stake) {
     const t = stake >= 2 ? BR.ANTE_TARGETS_HARD : BR.ANTE_TARGETS;

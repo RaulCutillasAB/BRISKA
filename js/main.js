@@ -24,7 +24,7 @@
   function computeSize() {
     const mobile = innerWidth <= 720;
     let cw;
-    if (mobile) cw = Math.min((innerWidth - 16) / 6.1, innerHeight / 8.4);
+    if (mobile) cw = Math.min((innerWidth - 16) / 5.3, innerHeight / 8.2);
     else {
       const side = BR.clamp(innerWidth * 0.2, 230, 300);
       const mw = innerWidth - side - 42;
@@ -88,10 +88,10 @@
     }
     // mazo
     const showDeck = g.phase === 'round' || (g.phase === 'pack' && g.pack && g.pack.hand);
-    if (showDeck) {
+    if (showDeck && innerWidth > 720) {
       const p = deckPos();
       const sc = innerWidth <= 720 ? 0.7 : 1;
-      D.push({ key: 'deck', kind: 'deck', obj: {}, x: p.x - (cw - cw * sc) / 2, y: p.y - (ch - ch * sc) / 2, scale: sc, z: 5, tip: () => `<div class="tt-title">Mazo</div><div class="tt-body">${g.phase === 'round' ? g.drawPile.length : g.deck.length} cartas por robar de ${g.deck.length}</div>` });
+      D.push({ key: 'deck', kind: 'deck', obj: {}, x: p.x - (cw - cw * sc) / 2, y: p.y - (ch - ch * sc) / 2, scale: sc, z: 5, onClick: () => { AU.sfx.button(); S.runInfo(g); }, tip: () => `<div class="tt-title">Mazo</div><div class="tt-body">${g.phase === 'round' ? g.drawPile.length : g.deck.length} cartas por robar de ${g.deck.length}</div>` });
     }
     const dp = deckPos();
     // mano
@@ -163,6 +163,9 @@
       });
     }
     V.sync(D);
+    const showHint = g.phase === 'round' && Meta.data.stats.hands < 2 && !UI.sel.length && !UI.busy && !g.played.length;
+    const hint = $('hint');
+    if (hint) { hint.classList.toggle('show', showHint); }
     if (UI.hoverKey && !V.sprites.has(UI.hoverKey)) { S.hideTip(); UI.hoverKey = null; }
   }
 
@@ -317,6 +320,7 @@
     if (res.money) { moneyPop(res.money); }
     for (const x of res.extra) { const tt = BR.TAG_BY_ID[x.tag]; S.toast(`✦ Copia: ${tt.name}`, 'unlock'); }
     if (g.openPendingPack('blind')) { AU.sfx.pack(); }
+    ach({ type: 'tick' });
     render(); save();
   }
 
@@ -477,10 +481,13 @@
           banner('¡No permitido!', 'red', st.text);
           V.shakeIt('dummy');
           await wait(1100); break;
-        case 'base':
+        case 'base': {
           hn.innerHTML = `${BR.HANDS[st.type].name}<small>nv.${st.level}</small>`;
+          const pc = FX.center($('z-play'));
+          FX.pop(pc[0], pc[1] - UI.ch * 0.78, BR.HANDS[st.type].name, 'msg', { cls: 'handtitle', dur: 1400 });
           setChipsMult(st.chips, st.mult); bumpEl('chips-box'); bumpEl('mult-box');
           AU.sfx.tick(); await wait(380); break;
+        }
         case 'cante': {
           setChipsMult(st.chips, st.mult, 'c');
           AU.sfx.cante(); BR.BG.pulse(0.8);
@@ -534,6 +541,7 @@
       }
       if (st.post) await wait(60);
     }
+    ach({ type: 'hand', total: res.total, cante: res.ctx && res.ctx.cante, contains: res.ev.contains, handType: res.ev.type });
     const nb = Meta.recordHand(g, res.total, res.ev.type);
     if (nb && res.total > 1000) S.toast('✦ ¡Nueva mejor mano: ' + BR.fmt(res.total) + '!', 'unlock');
     UI.animScore = false;
@@ -632,8 +640,8 @@
     banner(out.fenix ? '¡El Fénix te salva!' : boss ? '¡Guardián vencido!' : '¡Envite superado!', '', out.fenix ? 'Arde en llamas y renace tu esperanza' : null);
     FX.confetti();
     BR.BG.pulse(1.2);
+    ach({ type: 'round', boss: g.r.kind === 'boss' });
     await wait(900);
-    const sr = $('stage').getBoundingClientRect();
     for (const id of g.hand) V.exit(id, { mode: 'fly', x: deckPos().x, y: deckPos().y, down: true });
     const res = g.endRound();
     showEvents(res.tev.filter((e) => !e.money));
@@ -669,6 +677,7 @@
     if (r === 'victory') {
       AU.sfx.victory(); FX.confetti(); setTimeout(FX.confetti, 900);
       BR.BG.set('win');
+      ach({ type: 'win' });
       const un = recordEnd(true);
       render();
       setTimeout(() => S.endScreen(g, true, un, endChoice), 1200 / BR.speedMult);
@@ -700,7 +709,7 @@
     const g = UI.g;
     const it = where === 'items' ? g.shop.items[idx] : where === 'packs' ? g.shop.packs[idx] : g.shop.voucher;
     const before = g.money;
-    const r = g.buy(where, idx);
+    const r = g.buy(where, idx, useNow);
     UI.selShop = null;
     if (r.err) { AU.sfx.error(); S.toast(r.err, 'err'); V.shakeIt(key); render(); return; }
     AU.sfx.buy();
@@ -711,7 +720,8 @@
     if (r.talisman) { V.exit(key, { mode: 'fade' }); }
     if (r.pack) { AU.sfx.pack(); UI.packSel = []; if (p) FX.burst(p[0], p[1], { n: 40, colors: ['#fff6dc', '#ffd36e', '#c77dff'], speed: 8, life: 800, size: 4, shape: 'star' }); }
     render();
-    if (useNow && r.consumable) { await wait(250); await useCons(r.consumable.uid); }
+    if (r.used) { V.exit(key, { mode: 'dissolve' }); render(); UI.busy = true; await animateConsResult(r.used); UI.busy = false; render(); }
+    ach({ type: 'tick' });
     save();
   }
   function reroll() {
@@ -730,6 +740,8 @@
     AU.sfx.button();
     clearSelections();
     g.advanceAfterShop();
+    for (const u of Meta.checkUnlocks(g)) S.toast('🔓 ' + u.text, 'unlock');
+    ach({ type: 'tick' });
     if (g.blindIdx === 0) { banner('Noche ' + g.ante, '', g.ante === 8 ? 'La última noche. El Guardián final te espera.' : g.ante > 8 ? 'Más allá de las estrellas…' : null); AU.sfx.levelup(); }
     setMood();
     render(); save();
@@ -774,6 +786,7 @@
     if (p) FX.burst(p[0], p[1], { n: 30, colors: k.type === 'con' ? ['#9fd8ff', '#fff'] : k.type === 'aug' ? ['#e6c8ff', '#ffd36e'] : ['#9ff5e6', '#fff'], speed: 6, life: 800, size: 4, shape: 'star' });
     await animateConsResult(res, k);
     UI.busy = false;
+    if (res.lost) { gameOver('Te has quedado sin cartas'); return; }
     render(); save();
   }
   async function animateConsResult(res, k) {
@@ -833,6 +846,7 @@
     UI.packSel = [];
     await animateConsResult(res, c);
     if (res.closed) await afterPackClosed();
+    ach({ type: 'tick' });
     UI.busy = false;
     render(); save();
   }
@@ -857,6 +871,7 @@
   function recordEnd(won) {
     const g = UI.g;
     Meta.flushGame(g);
+    Meta.recordDaily(g);
     if (g.recorded) { Meta.data.stats.bestAnte = Math.max(Meta.data.stats.bestAnte, g.ante); Meta.save(); return []; }
     g.recorded = true;
     return Meta.endRun(g, won);
@@ -879,6 +894,13 @@
     if (a === 'endless') { S.close(); g.continueEndless(); setMood(); render(); save(); return; }
     if (a === 'new') { S.newRun(startRun); return; }
     UI.g = null; render(); showMenu();
+  }
+
+  /* ======================= logros ======================= */
+  function ach(ev) {
+    ev.g = ev.g || UI.g;
+    const got = Meta.checkAch(ev);
+    got.forEach((a, i) => setTimeout(() => { S.toast(`🏆 <b>Logro:</b> ${a.name} — <span style="font-weight:500">${a.desc}</span>`, 'unlock'); AU.sfx.levelup(); }, i * 700));
   }
 
   /* ======================= utilidades ======================= */
@@ -949,6 +971,7 @@
     S.close();
     V.clear();
     const g = BR.Game.create(opts);
+    if (opts.daily) { g.daily = opts.daily; Meta.recordDaily(g); Meta.data.daily.tries++; Meta.save(); }
     UI.g = g; BR.game = g;
     V.deckId = g.deckId;
     UI.sel = []; UI.packSel = []; clearSelections();
@@ -956,7 +979,7 @@
     setMood();
     render();
     save();
-    banner('Noche 1', '', 'Que empiece la partida');
+    banner(g.daily ? 'Reto del día' : 'Noche 1', '', g.daily ? BR.DECK_BY_ID[g.deckId].name + ' · semilla ' + g.seed : 'Que empiece la partida');
     AU.sfx.levelup();
     if (!Meta.data.tutorial) { Meta.data.tutorial = true; Meta.save(); setTimeout(() => S.howto(), 600); }
   }
@@ -982,6 +1005,11 @@
     setMood();
     S.mainMenu(!!Meta.loadRun(), (a) => {
       if (a === 'continue') continueRun();
+      else if (a === 'daily') {
+        const d = Meta.dailyInfo();
+        const go = () => startRun({ deckId: d.deckId, stake: 0, seed: d.seed, daily: d.key });
+        if (Meta.loadRun()) S.confirm('¿Reto del día?', 'Perderás la partida guardada.', 'Jugar el reto', (y) => (y ? go() : showMenu())); else go();
+      }
       else if (a === 'new') { if (Meta.loadRun()) S.confirm('¿Nueva partida?', 'Perderás la partida guardada.', 'Empezar de nuevo', (y) => (y ? S.newRun(startRun) : showMenu())); else S.newRun(startRun); S.onClose = () => { if (!UI.g) showMenu(); }; }
       else if (a === 'grim') { S.grimoire(); S.onClose = () => showMenu(); }
       else if (a === 'how') { S.howto(() => showMenu()); }

@@ -17,7 +17,9 @@ function bestPlay(g) {
   for (const a of all.slice(0, 12)) { const v = realScore(g, a.c); if (v > bv) { bv = v; best = a; } }
   return { ids: best.c, v: bv };
 }
-function talValue(g, id) { const d = BR.TAL_BY_ID[id]; return d.rarity * 3 + (d.hand || d.card ? 2 : 0); }
+function favType(g) { let b = 'pareja', bv = -1; for (const [k, v] of Object.entries(g.handLevels)) { const s = v.played + v.lvl * 2; if (s > bv) { bv = s; b = k; } } return b; }
+const XM = /\{x×/;
+function talValue(g, id) { const d = BR.TAL_BY_ID[id]; const t = d.text({ st: d.init ? d.init() : {} }, null); let v = d.rarity * 2 + (XM.test(t) ? 6 : 0) + (d.hand || d.card ? 2 : 0); const fav = favType(g); if (t.includes(BR.HANDS[fav].name)) v += 5; if (d.passive || d.flags) v -= 2; return v; }
 function playRound(g) {
   let guard = 0;
   while (g.phase === 'round' && guard++ < 60) {
@@ -55,10 +57,10 @@ function shopBot(g) {
           let worst = g.talismans[0]; for (const t of g.talismans) if (talValue(g, t.id) < talValue(g, worst.id)) worst = t;
           if (talValue(g, it.id) > talValue(g, worst.id) + 2 && g.money + g.sellValue(worst) >= cost) { g.sellTalisman(worst.uid); g.buy('items', i); did = true; }
         }
-      } else if (it.kind === 'con' && g.consSpace() > 0) { g.buy('items', i); did = true; }
+      } else if (it.kind === 'con' && (it.id === favType(g) || g.counts.consts < 2) && g.money - cost >= 5) { g.buy('items', i, true); did = true; }
     }
-    for (let i = 0; i < g.shop.packs.length; i++) { const it = g.shop.packs[i]; if (!it) continue; if (g.money >= g.itemCost(it) + 6) { g.buy('packs', i); did = true; packBot(g); } }
-    if (!did && g.money >= g.rerollCostNow() + 12) { g.reroll(); did = true; }
+    for (let i = 0; i < g.shop.packs.length; i++) { const it = g.shop.packs[i]; if (!it) continue; if ((it.pack === 'con' || it.pack === 'tal') && g.money >= g.itemCost(it) + 10) { g.buy('packs', i); did = true; packBot(g); } }
+    if (!did && g.money >= g.rerollCostNow() + 25) { g.reroll(); did = true; }
     if (!did) break;
   }
 }
@@ -66,7 +68,8 @@ function packBot(g) {
   let guard = 0;
   while (g.phase === 'pack' && guard++ < 10) {
     let done = false;
-    const ch = g.pack.choices.filter(Boolean).sort((a, b) => (a.kind === 'tal' ? -talValue(g, a.id) : 0) - (b.kind === 'tal' ? -talValue(g, b.id) : 0));
+    const fav = favType(g);
+    const ch = g.pack.choices.filter(Boolean).sort((a, b) => (a.kind === 'tal' ? -talValue(g, a.id) : a.id === fav ? -10 : 0) - (b.kind === 'tal' ? -talValue(g, b.id) : b.id === fav ? -10 : 0));
     for (const c of ch) {
       let ids = [];
       if (c.kind === 'aug' || c.kind === 'ani') { const d = BR.consDef({ type: c.kind, id: c.id }); if (d.sel) ids = g.pack.hand.slice(0, d.sel[1]); if (['velo', 'duplicado', 'inmolacion', 'tijera', 'espectro', 'ouija', 'cantero'].includes(c.id)) continue; }
